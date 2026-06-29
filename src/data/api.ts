@@ -37,7 +37,13 @@ export async function fetchChildren(): Promise<Child[]> {
 
 export async function createChild(
   profileId: string,
-  input: { name: string; birth_year: number; notes?: string | null; color: string },
+  input: {
+    name: string;
+    birth_year: number | null;
+    relation: string | null;
+    notes?: string | null;
+    color: string;
+  },
 ): Promise<Child> {
   const { data, error } = await supabase
     .from('children')
@@ -82,11 +88,12 @@ export interface NewTripInput {
   hard_nos: string | null;
   accent_color: string;
   childIds: string[];
+  hasKids: boolean;
 }
 
 /** Creates a trip, attaches travelers, and seeds the deterministic timeline. */
 export async function createTrip(profileId: string, input: NewTripInput): Promise<Trip> {
-  const { childIds, ...tripFields } = input;
+  const { childIds, hasKids, ...tripFields } = input;
   const { data: trip, error } = await supabase
     .from('trips')
     .insert({ profile_id: profileId, status: 'planning', ...tripFields })
@@ -106,7 +113,7 @@ export async function createTrip(profileId: string, input: NewTripInput): Promis
     endDate: trip.end_date,
     transitMode: trip.transit_mode,
     tripType: trip.trip_type,
-    hasKids: childIds.length > 0,
+    hasKids,
   });
   if (seeds.length) {
     const rows = seeds.map((s) => ({ trip_id: trip.id, ...s }));

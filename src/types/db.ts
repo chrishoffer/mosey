@@ -5,7 +5,9 @@
  */
 
 export type TripType = 'cruise' | 'resort' | 'road_trip' | 'city' | 'other';
-export type TransitMode = 'fly' | 'drive' | 'both';
+export type TransitMode = 'fly' | 'drive' | 'train' | 'public_transit' | 'both';
+/** How a traveler relates to the account owner. Free-ish; UI offers presets. */
+export type Relation = 'me' | 'partner' | 'child' | 'grandparent' | 'relative' | 'friend' | 'other';
 export type Pace = 'chill' | 'balanced' | 'packed';
 export type TripStatus = 'planning' | 'active' | 'archived';
 export type ItemSource = 'ai' | 'manual';
@@ -18,12 +20,16 @@ export interface Profile {
   created_at: string;
 }
 
+/** A traveler in the user's crew — a kid, partner, grandparent, friend, anyone.
+ *  (The table is still named `children` for legacy reasons; treat it as "people".)
+ *  birth_year is optional: adults can skip it; it's mainly used to tailor kid gear. */
 export interface Child {
   id: string;
   profile_id: string;
   name: string;
-  birth_year: number; // derive age; never store a stale int
-  notes: string | null; // fears / food / quirks
+  birth_year: number | null; // derive age; null = age not relevant (e.g. adults)
+  relation: Relation | null; // me / partner / child / friend …
+  notes: string | null; // fears / food / quirks / dietary
   color: string;
   created_at: string;
 }
@@ -94,6 +100,32 @@ export interface TripNote {
 }
 
 /** Derived helpers */
-export function ageFromBirthYear(birthYear: number, today = new Date()): number {
+export function ageFromBirthYear(birthYear: number | null, today = new Date()): number | null {
+  if (birthYear == null) return null;
   return Math.max(0, today.getFullYear() - birthYear);
 }
+
+/** A traveler counts as a kid if explicitly relation==='child', or under 18 by age. */
+export function isKid(c: Pick<Child, 'relation' | 'birth_year'>, today = new Date()): boolean {
+  if (c.relation === 'child') return true;
+  const age = ageFromBirthYear(c.birth_year, today);
+  return age != null && age < 18;
+}
+
+export const RELATION_LABELS: Record<Relation, string> = {
+  me: 'Me',
+  partner: 'Partner',
+  child: 'Kid',
+  grandparent: 'Grandparent',
+  relative: 'Relative',
+  friend: 'Friend',
+  other: 'Other',
+};
+
+export const TRANSIT_LABELS: Record<TransitMode, string> = {
+  fly: 'Flying',
+  drive: 'Driving',
+  train: 'Train',
+  public_transit: 'Public transit',
+  both: 'A mix',
+};

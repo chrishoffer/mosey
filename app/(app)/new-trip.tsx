@@ -8,8 +8,16 @@ import { DateField } from '../../src/components/DateField';
 import { useChildren, useCreateTrip, useTrips } from '../../src/hooks';
 import { fetchTimeline } from '../../src/data/api';
 import { scheduleTimelineNotifications } from '../../src/lib/notifications';
-import { accentList, getAccent, kidColors, palette, radius, spacing } from '../../src/theme/tokens';
-import { ageFromBirthYear, type Pace, type TransitMode, type TripType } from '../../src/types/db';
+import { accentList, getAccent, palette, radius, spacing } from '../../src/theme/tokens';
+import {
+  ageFromBirthYear,
+  isKid,
+  RELATION_LABELS,
+  type Pace,
+  type Relation,
+  type TransitMode,
+  type TripType,
+} from '../../src/types/db';
 
 const TRIP_TYPES: { key: TripType; label: string }[] = [
   { key: 'cruise', label: 'Cruise' },
@@ -21,7 +29,9 @@ const TRIP_TYPES: { key: TripType; label: string }[] = [
 const TRANSIT: { key: TransitMode; label: string }[] = [
   { key: 'fly', label: 'Fly' },
   { key: 'drive', label: 'Drive' },
-  { key: 'both', label: 'Both' },
+  { key: 'train', label: 'Train' },
+  { key: 'public_transit', label: 'Public transit' },
+  { key: 'both', label: 'A mix' },
 ];
 const PACES: { key: Pace; label: string; hint: string }[] = [
   { key: 'chill', label: 'Chill', hint: 'Lots of downtime' },
@@ -63,6 +73,9 @@ export default function NewTrip() {
     if (!start || !end) return Alert.alert('When?', 'Pick your start and end dates.');
     if (end < start) return Alert.alert('Check your dates', 'The end date is before the start date.');
 
+    const selectedCrew = (children.data ?? []).filter((c) => childIds.includes(c.id));
+    const hasKids = selectedCrew.some((c) => isKid(c));
+
     try {
       const trip = await createTrip.mutateAsync({
         name: tripName,
@@ -75,6 +88,7 @@ export default function NewTrip() {
         hard_nos: hardNos.trim() || null,
         accent_color: accent,
         childIds,
+        hasKids,
       });
       // Schedule local notifications for the freshly-seeded timeline (best-effort).
       const events = await fetchTimeline(trip.id);
@@ -119,23 +133,27 @@ export default function NewTrip() {
         </Field>
 
         <View style={styles.dates}>
-          <DateField label="Start" value={start} onChange={setStart} minimumDate={new Date(2020, 0, 1)} />
-          <DateField label="End" value={end} onChange={setEnd} minimumDate={start ?? undefined} />
+          <DateField label="Start date" value={start} onChange={setStart} />
+          <DateField label="End date" value={end} onChange={setEnd} minimumDate={start ?? undefined} />
         </View>
 
-        <Field label="Who’s coming?">
+        <Field label="Who’s going?">
           {children.isLoading ? (
-            <Text variant="caption" color={palette.inkSoft}>Loading family…</Text>
+            <Text variant="caption" color={palette.inkSoft}>Loading your crew…</Text>
           ) : (children.data ?? []).length === 0 ? (
             <Card lift="none" style={styles.noKids}>
               <Text variant="caption" color={palette.inkSoft}>
-                No kids saved yet. Add them in the Family tab and they’ll show up here for every trip.
+                No one saved yet. Add your crew — kids, partner, grandparents, friends — in the Family
+                tab and they’ll show up here for every trip.
               </Text>
             </Card>
           ) : (
             <View style={styles.kidWrap}>
               {(children.data ?? []).map((c) => {
                 const selected = childIds.includes(c.id);
+                const age = ageFromBirthYear(c.birth_year);
+                const sub =
+                  age != null ? `${age}` : c.relation ? RELATION_LABELS[c.relation as Relation] : 'traveler';
                 return (
                   <Pressable
                     key={c.id}
@@ -150,7 +168,7 @@ export default function NewTrip() {
                   >
                     <View style={[styles.kidDot, { backgroundColor: selected ? palette.white : c.color }]} />
                     <Text variant="label" color={selected ? palette.white : palette.ink}>
-                      {c.name} · {ageFromBirthYear(c.birth_year)}
+                      {c.name} · {sub}
                     </Text>
                   </Pressable>
                 );
@@ -160,7 +178,7 @@ export default function NewTrip() {
         </Field>
 
         <ChoiceRow<TripType> label="Trip type" options={TRIP_TYPES} value={tripType} onChange={setTripType} />
-        <ChoiceRow<TransitMode> label="Getting there" options={TRANSIT} value={transit} onChange={setTransit} />
+        <ChoiceRow<TransitMode> label="How you’ll get there" options={TRANSIT} value={transit} onChange={setTransit} />
 
         <Field label="Pace">
           <View style={styles.paceRow}>
@@ -195,24 +213,6 @@ export default function NewTrip() {
             value={hardNos}
             onChangeText={setHardNos}
           />
-        </Field>
-
-        <Field label="Trip color">
-          <View style={styles.colorRow}>
-            {accentList.map((a) => (
-              <Pressable
-                key={a.key}
-                onPress={() => setAccent(a.key)}
-                accessibilityRole="button"
-                accessibilityLabel={a.label}
-                style={[
-                  styles.colorSwatch,
-                  { backgroundColor: a.base },
-                  accent === a.key && styles.colorSelected,
-                ]}
-              />
-            ))}
-          </View>
         </Field>
 
         <Button
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   multiline: { minHeight: 72, textAlignVertical: 'top' },
-  dates: { flexDirection: 'row', gap: spacing.md },
+  dates: { gap: spacing.md },
   kidWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   kidChip: {
     flexDirection: 'row',

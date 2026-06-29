@@ -29,6 +29,8 @@ export interface TimelineInput {
 
 const flies = (m: TransitMode) => m === 'fly' || m === 'both';
 const drives = (m: TransitMode) => m === 'drive' || m === 'both';
+/** Any mode where "download before you lose signal" is worth a nudge. */
+const longHaul = (m: TransitMode) => m === 'fly' || m === 'train' || m === 'public_transit' || m === 'both';
 
 /** 09:00 local on (startDate - leadDays). */
 function fireAt(startDate: string, leadDays: number): string | null {
@@ -98,7 +100,7 @@ export function generateTimeline(input: TimelineInput): TimelineSeed[] {
   });
 
   // --- Transit prep ---
-  if (flies(transitMode) || (drives(transitMode) && tripDays >= 2)) {
+  if (longHaul(transitMode) || (drives(transitMode) && tripDays >= 2)) {
     seeds.push({
       kind: 'nudge',
       lead_days: 3,

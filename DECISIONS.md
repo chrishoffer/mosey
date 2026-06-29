@@ -4,6 +4,19 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Round 1 of device feedback (Chris).** (1) **Family = everyone**: `children`
+  table now holds any traveler — added `relation` and made `birth_year` nullable (adults skip
+  age); UI relabeled to "your crew"; AI prompts include relation and only state age when known;
+  `hasKids` for the timeline is derived via `isKid()` (relation==='child' or age<18). Kept the
+  table named `children` to avoid a risky rename on the live DB. (2) **Date picker rebuilt** —
+  iOS bottom-sheet spinner + Done, Android native dialog, defaults to *today* (the old inline
+  calendars overlapped in the scroll view and defaulted to a far-past year). (3) **Trip-color
+  picker removed** from the questionnaire — accent is now auto-assigned silently. (4) **Transit
+  modes expanded** to fly / drive / train / public_transit / mix; timeline download nudge now
+  fires for train + public transit too. Requires migration `0002_crew_and_transit.sql` + a
+  function redeploy. tsc clean, 20/20 tests.
+
+
 - **2026-06-29 — Design pass aligned to `mosey-concept-v3.html` (now provided).** The human
   shared the concept. Applied: exact per-trip tint/deep shades + base→deep gradients and the
   stronger card lift (`--lift`/`--lift-sm`) into `src/theme/tokens.ts`; added the Mosey brand

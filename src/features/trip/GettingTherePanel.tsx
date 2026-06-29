@@ -5,7 +5,7 @@ import { Button, Card, Text } from '../../components/ui';
 import { useSetTransitDone, useTransit, useTravelers } from '../../hooks';
 import { generateTransitKit } from '../../lib/ai';
 import { getAccent, palette, spacing } from '../../theme/tokens';
-import type { Child, TransitItem, TransitKind, Trip } from '../../types/db';
+import { TRANSIT_LABELS, type Child, type TransitItem, type TransitKind, type Trip } from '../../types/db';
 
 const KIND_META: Record<TransitKind, { title: string; icon: keyof typeof Ionicons.glyphMap; blurb: string }> = {
   carryon: { title: 'Carry-on', icon: 'bag-handle-outline', blurb: 'One reachable bag per kid' },
@@ -51,8 +51,8 @@ export function GettingTherePanel({ trip }: { trip: Trip }) {
         <Card lift="soft">
           <Text variant="title">The getting-there kit</Text>
           <Text variant="body" color={palette.inkSoft} style={{ marginTop: spacing.sm }}>
-            Carry-on lists per kid, a download checklist, screen-light activities, and playlists — sized
-            to a {trip.transit_mode === 'drive' ? 'drive' : trip.transit_mode === 'both' ? 'mixed' : 'flight'} and your kids’ ages.
+            Carry-on lists per person, a download checklist, screen-light activities, and playlists —
+            sized to {TRANSIT_LABELS[trip.transit_mode].toLowerCase()} and your crew.
           </Text>
           <Button
             label={generating ? 'Building your kit…' : 'Generate transit kit'}

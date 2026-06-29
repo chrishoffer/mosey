@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     // ages for context
     const { data: travelerRows } = await admin
       .from("trip_travelers")
-      .select("children(name, birth_year, notes)")
+      .select("children(name, birth_year, relation, notes)")
       .eq("trip_id", trip_id);
 
     const thisYear = new Date().getFullYear();
@@ -55,13 +55,19 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .map((c: any) => ({
         name: c.name as string,
-        age: Math.max(0, thisYear - (c.birth_year as number)),
+        age: c.birth_year ? Math.max(0, thisYear - (c.birth_year as number)) : null,
+        relation: (c.relation as string | null) ?? null,
         notes: (c.notes as string | null) ?? null,
       }));
 
     const childLines = children.length
-      ? children.map((c) => `- ${c.name}, age ~${c.age}${c.notes ? `, notes: ${c.notes}` : ""}`).join("\n")
-      : "- (no children listed)";
+      ? children
+          .map(
+            (c) =>
+              `- ${c.name}${c.relation ? ` (${c.relation})` : ""}${c.age != null ? `, age ~${c.age}` : ""}${c.notes ? `, notes: ${c.notes}` : ""}`,
+          )
+          .join("\n")
+      : "- (no travelers listed)";
 
     const system = [
       "You are Mosey, a calm, practical family-travel sidekick.",

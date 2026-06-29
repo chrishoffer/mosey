@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     // travelers
     const { data: travelerRows } = await admin
       .from("trip_travelers")
-      .select("child_id, children(id, name, birth_year, notes)")
+      .select("child_id, children(id, name, birth_year, relation, notes)")
       .eq("trip_id", trip_id);
 
     const thisYear = new Date().getFullYear();
@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
       .map((c: any) => ({
         id: c.id as string,
         name: c.name as string,
-        age: Math.max(0, thisYear - (c.birth_year as number)),
+        age: c.birth_year ? Math.max(0, thisYear - (c.birth_year as number)) : null,
+        relation: (c.relation as string | null) ?? null,
         notes: (c.notes as string | null) ?? null,
       }));
 
@@ -75,8 +76,13 @@ Deno.serve(async (req) => {
     for (const c of children) nameToId.set(c.name.toLowerCase(), c.id);
 
     const childLines = children.length
-      ? children.map((c) => `- ${c.name}, age ~${c.age}${c.notes ? `, notes: ${c.notes}` : ""}`).join("\n")
-      : "- (no children listed; produce shared-only items)";
+      ? children
+          .map(
+            (c) =>
+              `- ${c.name}${c.relation ? ` (${c.relation})` : ""}${c.age != null ? `, age ~${c.age}` : ""}${c.notes ? `, notes: ${c.notes}` : ""}`,
+          )
+          .join("\n")
+      : "- (no travelers listed; produce shared-only items)";
 
     const system = [
       "You are Mosey, a calm family-travel transit-kit assistant.",

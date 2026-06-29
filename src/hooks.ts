@@ -28,8 +28,13 @@ export function useCreateChild() {
   const userId = useUserId();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; birth_year: number; notes?: string | null; color: string }) =>
-      api.createChild(userId!, input),
+    mutationFn: (input: {
+      name: string;
+      birth_year: number | null;
+      relation: string | null;
+      notes?: string | null;
+      color: string;
+    }) => api.createChild(userId!, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.children }),
   });
 }

@@ -50,6 +50,16 @@ describe('generateTimeline', () => {
     expect(withoutKids.some((s) => s.title.includes('Refill meds'))).toBe(false);
   });
 
+  it('adds the download nudge for train trips (not just flights)', () => {
+    const seeds = generateTimeline({ ...base, transitMode: 'train' });
+    expect(seeds.some((s) => s.title.includes('Download'))).toBe(true);
+  });
+
+  it('skips the passport milestone for public transit', () => {
+    const seeds = generateTimeline({ ...base, transitMode: 'public_transit' });
+    expect(seeds.find((s) => s.lead_days === 84)).toBeUndefined();
+  });
+
   it('never crashes on a malformed date', () => {
     const seeds = generateTimeline({ ...base, startDate: 'not-a-date' });
     expect(Array.isArray(seeds)).toBe(true);

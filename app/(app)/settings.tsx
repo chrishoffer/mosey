@@ -8,7 +8,9 @@ import { useChildren, useCreateChild, useDeleteChild, useProfile } from '../../s
 import { useAuth } from '../../src/lib/auth';
 import { updateDisplayName } from '../../src/data/api';
 import { kidColors, palette, radius, spacing } from '../../src/theme/tokens';
-import { ageFromBirthYear } from '../../src/types/db';
+import { ageFromBirthYear, RELATION_LABELS, type Relation } from '../../src/types/db';
+
+const RELATIONS: Relation[] = ['me', 'partner', 'child', 'grandparent', 'relative', 'friend', 'other'];
 
 export default function Settings() {
   const { session, signOut } = useAuth();
@@ -20,6 +22,7 @@ export default function Settings() {
 
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
+  const [relation, setRelation] = useState<Relation>('child');
   const [birthYear, setBirthYear] = useState('');
   const [notes, setNotes] = useState('');
   const [color, setColor] = useState<string>(kidColors[0]);
@@ -27,13 +30,29 @@ export default function Settings() {
   const thisYear = new Date().getFullYear();
 
   async function addChild() {
-    const yr = parseInt(birthYear, 10);
-    if (!name.trim() || Number.isNaN(yr) || yr < thisYear - 25 || yr > thisYear) {
-      Alert.alert('Check the details', 'Enter a name and a valid birth year.');
+    if (!name.trim()) {
+      Alert.alert('Add a name', 'Everyone needs a name.');
       return;
     }
-    await createChild.mutateAsync({ name: name.trim(), birth_year: yr, notes: notes.trim() || null, color });
+    // Birth year is optional (mainly for kids). If given, sanity-check it.
+    let yr: number | null = null;
+    if (birthYear.trim()) {
+      const parsed = parseInt(birthYear, 10);
+      if (Number.isNaN(parsed) || parsed < thisYear - 110 || parsed > thisYear) {
+        Alert.alert('Check the birth year', 'Enter a valid year, or leave it blank.');
+        return;
+      }
+      yr = parsed;
+    }
+    await createChild.mutateAsync({
+      name: name.trim(),
+      birth_year: yr,
+      relation,
+      notes: notes.trim() || null,
+      color,
+    });
     setName('');
+    setRelation('child');
     setBirthYear('');
     setNotes('');
     setColor(kidColors[(children.data?.length ?? 0) % kidColors.length]);
@@ -41,7 +60,7 @@ export default function Settings() {
   }
 
   function confirmDelete(id: string, childName: string) {
-    Alert.alert('Remove child', `Remove ${childName} from your family? Past trips keep their record.`, [
+    Alert.alert('Remove from crew', `Remove ${childName}? Past trips keep their record.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => deleteChild.mutate(id) },
     ]);
@@ -52,7 +71,8 @@ export default function Settings() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="hero">Family</Text>
         <Text variant="body" color={palette.inkSoft}>
-          Add your kids once — every trip reuses them, so each new trip feels lighter.
+          Add your crew once — kids, partner, grandparents, friends. Every trip reuses them, so
+          each new trip feels lighter.
         </Text>
 
         <Card>
@@ -67,7 +87,7 @@ export default function Settings() {
         </Card>
 
         <View style={styles.kidsHeader}>
-          <Text variant="heading">Kids</Text>
+          <Text variant="heading">Your crew</Text>
           {!adding && (
             <Button
               label="Add"
@@ -85,16 +105,23 @@ export default function Settings() {
         ) : (children.data ?? []).length === 0 && !adding ? (
           <Card lift="none" style={styles.emptyKids}>
             <Text variant="body" color={palette.inkSoft}>
-              No kids yet. Add them so Mosey can tailor packing and the transit kit to each one.
+              No one yet. Add everyone who travels with you so Mosey can tailor packing and the
+              getting-there kit — ages help most for the little ones.
             </Text>
           </Card>
         ) : (
-          (children.data ?? []).map((c) => (
+          (children.data ?? []).map((c) => {
+            const age = ageFromBirthYear(c.birth_year);
+            const sub = [c.relation ? RELATION_LABELS[c.relation as Relation] : null, age != null ? `age ${age}` : null]
+              .filter(Boolean)
+              .join(' · ');
+            return (
             <Card key={c.id} lift="none" style={styles.kidRow}>
               <View style={[styles.kidDot, { backgroundColor: c.color }]} />
               <View style={{ flex: 1 }}>
                 <Text variant="bodyStrong">
-                  {c.name} · age {ageFromBirthYear(c.birth_year)}
+                  {c.name}
+                  {sub ? ` · ${sub}` : ''}
                 </Text>
                 {c.notes ? (
                   <Text variant="caption" color={palette.inkSoft} numberOfLines={2}>
@@ -111,26 +138,53 @@ export default function Settings() {
                 <Ionicons name="trash-outline" size={20} color={palette.inkSoft} />
               </Pressable>
             </Card>
-          ))
+            );
+          })
         )}
 
         {adding && (
           <Card>
             <Text variant="overline" color={palette.inkSoft}>
-              New child
+              New traveler
             </Text>
             <TextInput style={styles.input} placeholder="Name" placeholderTextColor={palette.inkSoft} value={name} onChangeText={setName} />
+
+            <Text variant="label" style={{ marginTop: spacing.sm }}>
+              Who is this?
+            </Text>
+            <View style={styles.relationRow}>
+              {RELATIONS.map((r) => {
+                const active = relation === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => setRelation(r)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[styles.relationChip, active && { backgroundColor: palette.ink, borderColor: palette.ink }]}
+                  >
+                    <Text variant="label" color={active ? palette.white : palette.inkSoft}>
+                      {RELATION_LABELS[r]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <TextInput
               style={styles.input}
-              placeholder={`Birth year (e.g. ${thisYear - 6})`}
+              placeholder={`Birth year — kids only (e.g. ${thisYear - 6})`}
               placeholderTextColor={palette.inkSoft}
               keyboardType="number-pad"
               value={birthYear}
               onChangeText={setBirthYear}
             />
+            <Text variant="caption" color={palette.inkSoft}>
+              Leave birth year blank for adults — it just helps Mosey size kids’ gear.
+            </Text>
             <TextInput
               style={[styles.input, styles.notes]}
-              placeholder="Notes — fears, foods, quirks (optional)"
+              placeholder="Notes — fears, foods, dietary needs, quirks (optional)"
               placeholderTextColor={palette.inkSoft}
               multiline
               value={notes}
@@ -244,6 +298,17 @@ const styles = StyleSheet.create({
   },
   notes: { minHeight: 72, textAlignVertical: 'top' },
   nameRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', marginTop: spacing.sm },
+  relationRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap' },
+  relationChip: {
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: palette.card,
+    minHeight: 40,
+    justifyContent: 'center',
+  },
   colorRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: 'transparent' },
   colorSelected: { borderColor: palette.ink },

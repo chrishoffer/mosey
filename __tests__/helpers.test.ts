@@ -1,4 +1,4 @@
-import { ageFromBirthYear } from '../src/types/db';
+import { ageFromBirthYear, isKid } from '../src/types/db';
 import { buildAmazonUrl } from '../src/lib/amazon';
 import { countdownLabel, daysUntil } from '../src/lib/dates';
 
@@ -13,6 +13,23 @@ describe('ageFromBirthYear', () => {
   it('never returns a negative age', () => {
     const now = new Date('2026-06-29T12:00:00Z');
     expect(ageFromBirthYear(2030, now)).toBe(0);
+  });
+
+  it('returns null when no birth year (adults)', () => {
+    expect(ageFromBirthYear(null)).toBeNull();
+  });
+});
+
+describe('isKid', () => {
+  const now = new Date('2026-06-29T12:00:00Z');
+  it('treats relation=child as a kid regardless of age', () => {
+    expect(isKid({ relation: 'child', birth_year: null }, now)).toBe(true);
+  });
+  it('treats under-18 by birth year as a kid', () => {
+    expect(isKid({ relation: null, birth_year: 2018 }, now)).toBe(true);
+  });
+  it('treats an adult (partner, no age) as not a kid', () => {
+    expect(isKid({ relation: 'partner', birth_year: null }, now)).toBe(false);
   });
 });
 
