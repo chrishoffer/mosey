@@ -64,10 +64,34 @@ export interface Trip {
   end_date: string;
   pace: Pace;
   hard_nos: string | null;
+  lodging: string | null; // hotel / rental / cruise cabin / family …
+  activities: string[] | null; // beach, hiking, theme parks …
+  extra_notes: string | null; // "anything else Mosey should know"
   accent_color: string; // AccentKey from theme
   status: TripStatus;
   created_at: string;
 }
+
+export const LODGING_OPTIONS = [
+  'Hotel',
+  'Vacation rental',
+  'Resort',
+  'Cruise cabin',
+  'Family or friends',
+  'Camping / RV',
+  'Other',
+] as const;
+
+export const ACTIVITY_OPTIONS = [
+  'Beach / pool',
+  'Hiking / outdoors',
+  'Theme parks',
+  'City sightseeing',
+  'Snow / skiing',
+  'Nice dinners out',
+  'Relaxing / spa',
+  'Water sports',
+] as const;
 
 export interface TripTraveler {
   trip_id: string;

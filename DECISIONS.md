@@ -4,6 +4,17 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Ask Mosey takes actions + smarter questions.** (1) **Action-taking assistant:**
+  `ask-mosey` rewritten so the model can emit validated actions — `add_reminder` (timeline nudge,
+  lead_days→notify_at), `add_packing`, `add_transit`, `add_home_task`, `add_logistics`. Server
+  re-validates every action, maps child_name→child_id (shared fallback), inserts rows, and returns
+  the performed list; the Ask screen shows "Added to your trip" chips and invalidates the affected
+  queries so the plan updates live. Guardrails preserved (no real places, ownership, pinned model).
+  (2) **Smarter questions:** migration `0005` adds `lodging`, `activities[]`, `extra_notes` to trips;
+  the questionnaire collects them (optional), and all three generators (packing/transit/day-plan)
+  weave them into their prompts. Needs migration 0005 + redeploy of all 4 functions. tsc clean, 24/24.
+
+
 - **2026-06-29 — Bolder design pass (Chris: "go more bold").** Each trip now *wears its color*:
   trip-detail gets a rich gradient header (white text) + an accent-tinted screen background
   (was gray-on-white); the new-trip flow is tinted with the trip's auto color. Shelf planning

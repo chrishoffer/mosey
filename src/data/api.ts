@@ -102,6 +102,9 @@ export interface NewTripInput {
   end_date: string;
   pace: Trip['pace'];
   hard_nos: string | null;
+  lodging: string | null;
+  activities: string[];
+  extra_notes: string | null;
   accent_color: string;
   childIds: string[];
   hasKids: boolean;

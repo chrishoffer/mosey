@@ -11,8 +11,10 @@ import { fetchTimeline } from '../../src/data/api';
 import { scheduleTimelineNotifications } from '../../src/lib/notifications';
 import { accentList, getAccent, palette, radius, spacing } from '../../src/theme/tokens';
 import {
+  ACTIVITY_OPTIONS,
   ageFromBirthYear,
   isKid,
+  LODGING_OPTIONS,
   RELATION_LABELS,
   type Pace,
   type Relation,
@@ -55,6 +57,13 @@ export default function NewTrip() {
   const [tripType, setTripType] = useState<TripType>('resort');
   const [pace, setPace] = useState<Pace>('balanced');
   const [hardNos, setHardNos] = useState('');
+  const [lodging, setLodging] = useState<string | null>(null);
+  const [activities, setActivities] = useState<string[]>([]);
+  const [extraNotes, setExtraNotes] = useState('');
+
+  function toggleActivity(a: string) {
+    setActivities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
+  }
 
   // Default accent rotates by how many trips exist, so the shelf stays colorful.
   const defaultAccent = accentList[(trips.data?.length ?? 0) % accentList.length].key;
@@ -87,6 +96,9 @@ export default function NewTrip() {
         end_date: format(end, 'yyyy-MM-dd'),
         pace,
         hard_nos: hardNos.trim() || null,
+        lodging,
+        activities,
+        extra_notes: extraNotes.trim() || null,
         accent_color: accent,
         childIds,
         hasKids,
@@ -169,6 +181,48 @@ export default function NewTrip() {
           </View>
         </Field>
 
+        <Field label="Where are you staying?" hint="Helps Mosey tailor what to pack (optional)">
+          <View style={styles.choiceWrap}>
+            {LODGING_OPTIONS.map((l) => {
+              const active = lodging === l;
+              return (
+                <Pressable
+                  key={l}
+                  onPress={() => setLodging(active ? null : l)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.choice, active && { backgroundColor: palette.ink, borderColor: palette.ink }]}
+                >
+                  <Text variant="label" color={active ? palette.white : palette.ink}>
+                    {l}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Field>
+
+        <Field label="What are you planning?" hint="Pick any — sharpens the packing list & day plan (optional)">
+          <View style={styles.choiceWrap}>
+            {ACTIVITY_OPTIONS.map((a) => {
+              const active = activities.includes(a);
+              return (
+                <Pressable
+                  key={a}
+                  onPress={() => toggleActivity(a)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.choice, active && { backgroundColor: palette.ink, borderColor: palette.ink }]}
+                >
+                  <Text variant="label" color={active ? palette.white : palette.ink}>
+                    {a}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Field>
+
         <Field label="Hard nos" hint="Anything to avoid? (optional)">
           <TextInput
             style={[styles.input, styles.multiline]}
@@ -177,6 +231,17 @@ export default function NewTrip() {
             multiline
             value={hardNos}
             onChangeText={setHardNos}
+          />
+        </Field>
+
+        <Field label="Anything else Mosey should know?" hint="Special occasion, medical needs, must-dos… (optional)">
+          <TextInput
+            style={[styles.input, styles.multiline]}
+            placeholder="e.g. celebrating a birthday, one kid gets carsick, grandma uses a walker"
+            placeholderTextColor={palette.inkSoft}
+            multiline
+            value={extraNotes}
+            onChangeText={setExtraNotes}
           />
         </Field>
 

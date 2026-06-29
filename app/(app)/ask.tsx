@@ -10,18 +10,20 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Screen, Text } from '../../src/components/ui';
 import { Sparkle } from '../../src/components/Sparkle';
 import { useTrips } from '../../src/hooks';
-import { askMosey, type AskMoseyReply } from '../../src/lib/ai';
+import { qk } from '../../src/lib/queryClient';
+import { askMosey, type AskMoseyReply, type PerformedAction } from '../../src/lib/ai';
 import { getAccent, palette, radius, spacing } from '../../src/theme/tokens';
 
 const STARTERS = [
   'What am I forgetting?',
+  'Add a reminder to pay the final balance 60 days before we leave',
+  'Add water shoes and reef-safe sunscreen to the packing list',
   'How should I pace the days with little kids?',
-  'What should I pack in the carry-on?',
-  'Tips for the travel day with a 4-year-old?',
 ];
 
 interface Turn {
@@ -29,11 +31,21 @@ interface Turn {
   text: string;
   suggestions?: string[];
   deferred?: boolean;
+  actions?: PerformedAction[];
 }
+
+const ACTION_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  add_reminder: 'notifications-outline',
+  add_packing: 'checkbox-outline',
+  add_transit: 'airplane-outline',
+  add_home_task: 'home-outline',
+  add_logistics: 'document-text-outline',
+};
 
 export default function Ask() {
   const params = useLocalSearchParams<{ trip?: string }>();
   const trips = useTrips();
+  const qc = useQueryClient();
   const list = trips.data ?? [];
 
   // Resolve the trip context: explicit param → active trip → first trip.
@@ -69,8 +81,22 @@ export default function Ask() {
         };
     setTurns((prev) => [
       ...prev,
-      { role: 'mosey', text: reply.answer, suggestions: reply.suggestions, deferred: reply.deferred },
+      {
+        role: 'mosey',
+        text: reply.answer,
+        suggestions: reply.suggestions,
+        deferred: reply.deferred,
+        actions: reply.actions,
+      },
     ]);
+    // If Mosey added things to the plan, refresh the affected screens.
+    if (reply.actions && reply.actions.length && tripId) {
+      qc.invalidateQueries({ queryKey: qk.timeline(tripId) });
+      qc.invalidateQueries({ queryKey: qk.packing(tripId) });
+      qc.invalidateQueries({ queryKey: qk.transit(tripId) });
+      qc.invalidateQueries({ queryKey: qk.homeTasks(tripId) });
+      qc.invalidateQueries({ queryKey: qk.logistics(tripId) });
+    }
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
   }
 
@@ -134,7 +160,9 @@ export default function Ask() {
                 <Text variant="bodyStrong">Hi — I’m Mosey.</Text>
                 <Text variant="body" color={palette.inkSoft} style={{ marginTop: spacing.xs }}>
                   Ask me about packing, the getting-there kit, what you might be forgetting, or how to
-                  pace your days. I keep it general — I won’t invent specific places.
+                  pace your days. I can also <Text variant="bodyStrong" color={accent.deep}>add reminders
+                  and items straight to your trip</Text> — just say “add…” or “remind me…”. I keep it
+                  general — I won’t invent specific places.
                 </Text>
               </Card>
               <View style={styles.starters}>
@@ -197,6 +225,22 @@ function Bubble({ turn, accent, onChip }: { turn: Turn; accent: ReturnType<typeo
       <Text variant="body" color={isYou ? palette.white : palette.ink}>
         {turn.text}
       </Text>
+      {turn.actions && turn.actions.length > 0 ? (
+        <View style={styles.actions}>
+          <Text variant="overline" color={accent.deep}>
+            Added to your trip
+          </Text>
+          {turn.actions.map((a, i) => (
+            <View key={i} style={[styles.actionChip, { backgroundColor: accent.tint }]}>
+              <Ionicons name={ACTION_ICON[a.type] ?? 'add-circle-outline'} size={15} color={accent.deep} />
+              <Text variant="caption" color={accent.deep} style={{ flex: 1 }}>
+                {a.label}
+              </Text>
+              <Ionicons name="checkmark" size={15} color={accent.deep} />
+            </View>
+          ))}
+        </View>
+      ) : null}
       {turn.deferred ? (
         <View style={styles.deferred}>
           <Ionicons name="time-outline" size={14} color={palette.inkSoft} />
@@ -260,6 +304,15 @@ const styles = StyleSheet.create({
   moseyBubble: { alignSelf: 'flex-start', backgroundColor: palette.card, gap: spacing.xs },
   moseyTag: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: 2 },
   deferred: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  actions: { marginTop: spacing.sm, gap: spacing.xs },
+  actionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
   suggestChip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
   inputBar: {

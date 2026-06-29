@@ -142,6 +142,11 @@ Deno.serve(async (req) => {
       `Transit mode: ${trip.transit_mode}. Pace: ${trip.pace}.`,
       `Dates: ${startDate} to ${endDate}. Plan exactly ${nDays} day(s).`,
       trip.hard_nos ? `Hard-nos (avoid): ${trip.hard_nos}` : "",
+      trip.lodging ? `Lodging: ${trip.lodging}.` : "",
+      Array.isArray(trip.activities) && trip.activities.length
+        ? `Planned activities to work in: ${trip.activities.join(", ")}.`
+        : "",
+      trip.extra_notes ? `Extra context from the parent: ${trip.extra_notes}` : "",
       "Travelers:",
       childLines,
       "",

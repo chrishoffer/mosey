@@ -49,6 +49,11 @@ export function generateDayPlan(tripId: string) {
   return invoke<{ created: number }>('generate-day-plan', { trip_id: tripId });
 }
 
+export interface PerformedAction {
+  type: string; // add_reminder | add_packing | add_transit | add_home_task | add_logistics
+  label: string;
+}
+
 export interface AskMoseyReply {
   /** Plain, generic guidance — never names a real place (guardrail #2). */
   answer: string;
@@ -56,6 +61,8 @@ export interface AskMoseyReply {
   suggestions?: string[];
   /** True when the question wanted a specific real place we can't answer yet. */
   deferred?: boolean;
+  /** Things Mosey actually added to the trip in response (reminders, items…). */
+  actions?: PerformedAction[];
 }
 
 export function askMosey(tripId: string, question: string) {
