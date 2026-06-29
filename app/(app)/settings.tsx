@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { Button, Card, Divider, Screen, Text } from '../../src/components/ui';
 import { Sparkle } from '../../src/components/Sparkle';
+import { ensurePermission } from '../../src/lib/notifications';
 import { useChildren, useCreateChild, useDeleteChild, useProfile } from '../../src/hooks';
 import { useAuth } from '../../src/lib/auth';
 import { updateDisplayName } from '../../src/data/api';
@@ -69,10 +71,9 @@ export default function Settings() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="hero">Family</Text>
+        <Text variant="hero">Settings</Text>
         <Text variant="body" color={palette.inkSoft}>
-          Add your crew once — kids, partner, grandparents, friends. Every trip reuses them, so
-          each new trip feels lighter.
+          Your crew, your account, and how Mosey reaches you.
         </Text>
 
         <Card>
@@ -212,6 +213,15 @@ export default function Settings() {
         )}
 
         <Divider />
+        <Text variant="heading">Notifications</Text>
+        <NotificationsSection />
+
+        <Text variant="heading" style={{ marginTop: spacing.sm }}>
+          Sharing
+        </Text>
+        <SharingSection />
+
+        <Divider />
         <Pressable
           onPress={() => router.push('/(app)/paywall')}
           accessibilityRole="button"
@@ -234,6 +244,64 @@ export default function Settings() {
         </Text>
       </ScrollView>
     </Screen>
+  );
+}
+
+function NotificationsSection() {
+  const [granted, setGranted] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    Notifications.getPermissionsAsync().then((s) => setGranted(s.granted));
+  }, []);
+
+  async function enable() {
+    const ok = await ensurePermission();
+    setGranted(ok);
+  }
+
+  return (
+    <Card lift="none" style={{ gap: spacing.sm }}>
+      <View style={styles.notifRow}>
+        <Ionicons
+          name={granted ? 'notifications' : 'notifications-off-outline'}
+          size={22}
+          color={granted ? palette.success : palette.inkSoft}
+        />
+        <View style={{ flex: 1 }}>
+          <Text variant="bodyStrong">Trip nudges</Text>
+          <Text variant="caption" color={palette.inkSoft}>
+            {granted === null
+              ? 'Checking…'
+              : granted
+                ? 'On — Mosey taps you at the right moments (passport time, download day, the night before).'
+                : 'Off — turn these on so Mosey can remind you before each trip milestone.'}
+          </Text>
+        </View>
+      </View>
+      {granted === false && <Button label="Turn on reminders" onPress={enable} />}
+      {granted && (
+        <Text variant="caption" color={palette.inkSoft}>
+          To fully silence them, use your phone’s Settings → Notifications → Mosey.
+        </Text>
+      )}
+    </Card>
+  );
+}
+
+function SharingSection() {
+  return (
+    <Card lift="none" style={{ gap: spacing.sm }}>
+      <View style={styles.notifRow}>
+        <Ionicons name="people-circle-outline" size={22} color={palette.coral} />
+        <View style={{ flex: 1 }}>
+          <Text variant="bodyStrong">Share a trip with a co-parent</Text>
+          <Text variant="caption" color={palette.inkSoft}>
+            Invite your partner so you both see the same packing list, timeline, and checklists —
+            update once, you’re both covered. We’re building this now; it’ll appear here shortly.
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -314,4 +382,5 @@ const styles = StyleSheet.create({
   colorSelected: { borderColor: palette.ink },
   addActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.lg },
   plusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  notifRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
 });

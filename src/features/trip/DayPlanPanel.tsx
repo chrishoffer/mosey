@@ -39,8 +39,10 @@ export function DayPlanPanel({ trip }: { trip: Trip }) {
   if (list.length === 0) {
     return (
       <View style={styles.wrap}>
-        <Card lift="soft">
-          <Text variant="title">A gentle day-by-day flow</Text>
+        <Card lift="soft" style={{ backgroundColor: accent.tint }}>
+          <Text variant="title" color={accent.deep}>
+            A gentle day-by-day flow
+          </Text>
           <Text variant="body" color={palette.inkSoft} style={{ marginTop: spacing.sm }}>
             Mosey will sketch an easy rhythm for each day — built around your pace and your crew’s
             ages (nap windows included). It’s general guidance, not a rigid schedule, and it never

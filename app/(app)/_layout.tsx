@@ -15,8 +15,8 @@ export default function AppLayout() {
         tabBarStyle: {
           backgroundColor: palette.card,
           borderTopColor: palette.line,
-          height: 88,
-          paddingTop: 8,
+          height: 90,
+          paddingTop: 10,
         },
         tabBarLabelStyle: { fontFamily: 'HankenGrotesk_600SemiBold', fontSize: 11 },
       }}
@@ -24,17 +24,19 @@ export default function AppLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Shelf',
-          tabBarIcon: ({ color, size }) => <Ionicons name="albums" size={size} color={color} />,
+          title: 'Trips',
+          tabBarIcon: ({ color, size }) => <Ionicons name="briefcase" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="ask"
         options={{
-          title: 'Ask Mosey',
-          tabBarIcon: () => (
-            <View style={styles.sparkleWrap}>
-              <Sparkle size={26} color={palette.white} />
+          title: 'Ask',
+          // A modestly raised coral FAB — kept small enough that it never overlaps
+          // the screen content above it or the labels beside it.
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.sparkleWrap, focused && styles.sparkleWrapActive]}>
+              <Sparkle size={24} color={palette.white} />
             </View>
           ),
         }}
@@ -42,8 +44,8 @@ export default function AppLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Family',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-sharp" size={size} color={color} />,
         }}
       />
       {/* Routes that exist under (app) but should not appear as tabs */}
@@ -57,17 +59,21 @@ export default function AppLayout() {
 
 const styles = StyleSheet.create({
   sparkleWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     backgroundColor: palette.coral,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -14,
+    marginTop: -6,
     shadowColor: palette.coral,
-    shadowOpacity: 0.7,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  sparkleWrapActive: {
+    backgroundColor: palette.coral,
+    transform: [{ scale: 1.06 }],
   },
 });

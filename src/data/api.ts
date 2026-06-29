@@ -154,6 +154,22 @@ export async function updateTrip(id: string, patch: Partial<Trip>): Promise<void
   if (error) throw error;
 }
 
+export async function addTraveler(tripId: string, childId: string): Promise<void> {
+  const { error } = await supabase
+    .from('trip_travelers')
+    .insert({ trip_id: tripId, child_id: childId });
+  if (error) throw error;
+}
+
+export async function removeTraveler(tripId: string, childId: string): Promise<void> {
+  const { error } = await supabase
+    .from('trip_travelers')
+    .delete()
+    .eq('trip_id', tripId)
+    .eq('child_id', childId);
+  if (error) throw error;
+}
+
 export async function fetchTravelers(tripId: string): Promise<Child[]> {
   const { data, error } = await supabase
     .from('trip_travelers')
@@ -226,6 +242,11 @@ export async function fetchTransit(tripId: string): Promise<TransitItem[]> {
 
 export async function setTransitDone(id: string, is_done: boolean): Promise<void> {
   const { error } = await supabase.from('transit_items').update({ is_done }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteTransitItem(id: string): Promise<void> {
+  const { error } = await supabase.from('transit_items').delete().eq('id', id);
   if (error) throw error;
 }
 

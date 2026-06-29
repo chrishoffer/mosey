@@ -178,11 +178,9 @@ function HomeSection({ trip, accent }: { trip: Trip; accent: string }) {
             >
               {t.label}
             </Text>
-            {t.source === 'manual' ? (
-              <Pressable onPress={() => del.mutate(t.id)} hitSlop={8} accessibilityLabel={`Delete ${t.label}`}>
-                <Ionicons name="close" size={18} color={palette.inkSoft} />
-              </Pressable>
-            ) : null}
+            <Pressable onPress={() => del.mutate(t.id)} hitSlop={8} accessibilityLabel={`Delete ${t.label}`}>
+              <Ionicons name="close" size={18} color={palette.inkSoft} />
+            </Pressable>
           </Card>
         </Pressable>
       ))}

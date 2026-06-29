@@ -70,6 +70,22 @@ export function useTravelers(tripId: string) {
   return useQuery({ queryKey: qk.travelers(tripId), queryFn: () => api.fetchTravelers(tripId), enabled: !!tripId });
 }
 
+export function useAddTraveler(tripId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (childId: string) => api.addTraveler(tripId, childId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.travelers(tripId) }),
+  });
+}
+
+export function useRemoveTraveler(tripId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (childId: string) => api.removeTraveler(tripId, childId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.travelers(tripId) }),
+  });
+}
+
 export function useCreateTrip() {
   const userId = useUserId();
   const qc = useQueryClient();
@@ -178,6 +194,14 @@ export function useSetTransitDone(tripId: string) {
       if (ctx?.prev) qc.setQueryData(qk.transit(tripId), ctx.prev);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: qk.transit(tripId) }),
+  });
+}
+
+export function useDeleteTransitItem(tripId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteTransitItem(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.transit(tripId) }),
   });
 }
 

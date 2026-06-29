@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Text } from '../../components/ui';
-import { useSetTransitDone, useTransit, useTravelers } from '../../hooks';
+import { useDeleteTransitItem, useSetTransitDone, useTransit, useTravelers } from '../../hooks';
 import { generateTransitKit } from '../../lib/ai';
 import { getAccent, palette, spacing } from '../../theme/tokens';
 import { TRANSIT_LABELS, type Child, type TransitItem, type TransitKind, type Trip } from '../../types/db';
@@ -20,6 +20,7 @@ export function GettingTherePanel({ trip }: { trip: Trip }) {
   const transit = useTransit(trip.id);
   const travelers = useTravelers(trip.id);
   const setDone = useSetTransitDone(trip.id);
+  const del = useDeleteTransitItem(trip.id);
 
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -48,8 +49,10 @@ export function GettingTherePanel({ trip }: { trip: Trip }) {
   if (items.length === 0) {
     return (
       <View style={styles.wrap}>
-        <Card lift="soft">
-          <Text variant="title">The getting-there kit</Text>
+        <Card lift="soft" style={{ backgroundColor: accent.tint }}>
+          <Text variant="title" color={accent.deep}>
+            The getting-there kit
+          </Text>
           <Text variant="body" color={palette.inkSoft} style={{ marginTop: spacing.sm }}>
             Carry-on lists per person, a download checklist, screen-light activities, and playlists —
             sized to {TRANSIT_LABELS[trip.transit_mode].toLowerCase()} and your crew.
@@ -103,6 +106,7 @@ export function GettingTherePanel({ trip }: { trip: Trip }) {
                 child={it.child_id ? childById.get(it.child_id) ?? null : null}
                 accent={accent.base}
                 onToggle={() => setDone.mutate({ id: it.id, is_done: !it.is_done })}
+                onDelete={() => del.mutate(it.id)}
               />
             ))}
           </View>
@@ -122,20 +126,23 @@ function TransitRow({
   child,
   accent,
   onToggle,
+  onDelete,
 }: {
   item: TransitItem;
   child: Child | null;
   accent: string;
   onToggle: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onToggle}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: item.is_done }}
-      accessibilityLabel={`${item.label}, ${item.is_done ? 'done' : 'not done'}`}
-    >
-      <Card lift="soft" style={styles.row}>
+    <Card lift="soft" style={styles.row}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: item.is_done }}
+        accessibilityLabel={`${item.label}, ${item.is_done ? 'done' : 'not done'}`}
+        style={styles.rowMain}
+      >
         <Ionicons
           name={item.is_done ? 'checkmark-circle' : 'ellipse-outline'}
           size={24}
@@ -159,8 +166,11 @@ function TransitRow({
             </Text>
           ) : null}
         </View>
-      </Card>
-    </Pressable>
+      </Pressable>
+      <Pressable onPress={onDelete} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
+        <Ionicons name="close" size={18} color={palette.inkSoft} />
+      </Pressable>
+    </Card>
   );
 }
 
@@ -182,6 +192,7 @@ const styles = StyleSheet.create({
   section: { gap: spacing.sm },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   kidDot: { width: 10, height: 10, borderRadius: 5 },
   struck: { textDecorationLine: 'line-through' },

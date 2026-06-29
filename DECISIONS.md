@@ -4,6 +4,19 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Round 3 device feedback (client-only, no DB/redeploy).** (1) **Add crew during
+  setup** — new `CrewPicker` (saved chips + inline "Add someone") replaces the static chip list in
+  new-trip. (2) **Edit crew on an existing trip** — a "Who's going" card on trip detail with the
+  same picker, persisting via new `addTraveler`/`removeTraveler`. (3) **Ask FAB overlap fixed** —
+  smaller, less-raised coral sparkle; label shortened to "Ask". (4) **Renamed tabs**: Shelf→Trips,
+  Family→Settings. (5) **Delete any recommended item** — packing/transit/home rows all deletable
+  now (added `deleteTransitItem`). (6) **Warmth pass** — trip-detail header is a colored band;
+  AI empty-state cards use the trip's tint. (7) **Settings area** — added Notifications controls
+  (permission status + enable) and a Sharing entry (scaffold; real sharing is the next focused
+  task). Deferred to next round (they share a migration): real co-parent **trip sharing** and a
+  **richer questionnaire** feeding the AI. tsc clean, 20/20.
+
+
 - **2026-06-29 — Round 2: four substance features (all promoted by Chris).** (1) **Day-by-day
   flow plan** — new `generate-day-plan` Edge Function (sonnet, generic/no-places, pace+age
   aware), `trip_days` table, `DayPlanPanel`, a new "Days" tab. (2) **Trip-readiness ring** —

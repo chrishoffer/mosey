@@ -52,8 +52,10 @@ export function PackingPanel({ trip }: { trip: Trip }) {
   if (items.length === 0) {
     return (
       <View style={styles.wrap}>
-        <Card lift="soft">
-          <Text variant="title">Smart packing list</Text>
+        <Card lift="soft" style={{ backgroundColor: accent.tint }}>
+          <Text variant="title" color={accent.deep}>
+            Smart packing list
+          </Text>
           <Text variant="body" color={palette.inkSoft} style={{ marginTop: spacing.sm }}>
             Mosey will build a per-kid and shared list tailored to {trip.destination}, your dates, and
             each child’s ages and notes.
@@ -104,11 +106,7 @@ export function PackingPanel({ trip }: { trip: Trip }) {
               item={it}
               accent={accent.base}
               onToggle={() => setPacked.mutate({ id: it.id, is_packed: !it.is_packed })}
-              onDelete={
-                it.source === 'manual'
-                  ? () => delItem.mutate(it.id)
-                  : undefined
-              }
+              onDelete={() => delItem.mutate(it.id)}
             />
           ))}
         </View>

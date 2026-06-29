@@ -10,7 +10,15 @@ import { GettingTherePanel } from '../../../../src/features/trip/GettingTherePan
 import { DayPlanPanel } from '../../../../src/features/trip/DayPlanPanel';
 import { PrepPanel } from '../../../../src/features/trip/PrepPanel';
 import { ReadinessRing } from '../../../../src/components/ReadinessRing';
-import { useReadiness, useTrip, useUpdateTrip } from '../../../../src/hooks';
+import { CrewPicker } from '../../../../src/components/CrewPicker';
+import {
+  useAddTraveler,
+  useReadiness,
+  useRemoveTraveler,
+  useTravelers,
+  useTrip,
+  useUpdateTrip,
+} from '../../../../src/hooks';
 import { getAccent, palette, radius, spacing } from '../../../../src/theme/tokens';
 import { fmtDateRange } from '../../../../src/lib/dates';
 import type { TripStatus } from '../../../../src/types/db';
@@ -30,7 +38,17 @@ export default function TripDetail() {
   const trip = useTrip(id);
   const updateTrip = useUpdateTrip();
   const readiness = useReadiness(id);
+  const travelers = useTravelers(id);
+  const addTraveler = useAddTraveler(id);
+  const removeTraveler = useRemoveTraveler(id);
   const [tab, setTab] = useState<Tab>('timeline');
+  const [editCrew, setEditCrew] = useState(false);
+
+  const travelerIds = (travelers.data ?? []).map((c) => c.id);
+  function toggleTraveler(childId: string) {
+    if (travelerIds.includes(childId)) removeTraveler.mutate(childId);
+    else addTraveler.mutate(childId);
+  }
 
   if (trip.isLoading) {
     return (
@@ -76,16 +94,18 @@ export default function TripDetail() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleBlock}>
+        <View style={[styles.titleBlock, { backgroundColor: accent.tint }]}>
           <Text variant="overline" color={accent.deep}>
             {t.trip_type.replace('_', ' ')} · {t.pace}
           </Text>
-          <Text variant="hero">{t.name}</Text>
-          <Text variant="body" color={palette.inkSoft}>
+          <Text variant="hero" color={accent.deep}>
+            {t.name}
+          </Text>
+          <Text variant="label" color={accent.deep}>
             {t.destination} · {fmtDateRange(t.start_date, t.end_date)}
           </Text>
           {t.hard_nos ? (
-            <View style={[styles.hardNos, { backgroundColor: accent.tintSoft }]}>
+            <View style={[styles.hardNos, { backgroundColor: palette.card }]}>
               <Ionicons name="hand-left-outline" size={14} color={accent.deep} />
               <Text variant="caption" color={accent.deep}>
                 Hard nos: {t.hard_nos}
@@ -93,6 +113,37 @@ export default function TripDetail() {
             </View>
           ) : null}
         </View>
+
+        <Card lift="none" style={styles.crewCard}>
+          <View style={styles.crewHead}>
+            <View style={styles.crewTitle}>
+              <Ionicons name="people" size={18} color={accent.deep} />
+              <Text variant="bodyStrong">Who’s going</Text>
+            </View>
+            <Pressable onPress={() => setEditCrew((v) => !v)} hitSlop={8} accessibilityRole="button">
+              <Text variant="label" color={accent.deep}>
+                {editCrew ? 'Done' : 'Edit'}
+              </Text>
+            </Pressable>
+          </View>
+          {editCrew ? (
+            <CrewPicker selectedIds={travelerIds} onToggle={toggleTraveler} accentBase={accent.base} />
+          ) : travelerIds.length === 0 ? (
+            <Text variant="caption" color={palette.inkSoft}>
+              No one added yet. Tap Edit to add your crew — packing and the day plan tailor to them.
+            </Text>
+          ) : (
+            <View style={styles.crewChips}>
+              {(travelers.data ?? []).map((c) => (
+                <View key={c.id} style={[styles.crewChip, { backgroundColor: c.color }]}>
+                  <Text variant="label" color={palette.white}>
+                    {c.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </Card>
 
         {readiness.total > 0 && (
           <Card lift="soft" style={styles.readyCard}>
@@ -230,7 +281,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.x3 },
-  titleBlock: { gap: spacing.xs },
+  titleBlock: { gap: spacing.xs, padding: spacing.lg, borderRadius: radius.lg },
   hardNos: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -243,6 +294,11 @@ const styles = StyleSheet.create({
   },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: palette.card },
   readyCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  crewCard: { gap: spacing.sm, backgroundColor: palette.card },
+  crewHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  crewTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  crewChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  crewChip: { borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
   segmented: {
     flexDirection: 'row',
     gap: spacing.sm,

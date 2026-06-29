@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { Button, Card, Screen, Text } from '../../src/components/ui';
 import { DateField } from '../../src/components/DateField';
+import { CrewPicker } from '../../src/components/CrewPicker';
 import { useChildren, useCreateTrip, useTrips } from '../../src/hooks';
 import { fetchTimeline } from '../../src/data/api';
 import { scheduleTimelineNotifications } from '../../src/lib/notifications';
@@ -137,44 +138,8 @@ export default function NewTrip() {
           <DateField label="End date" value={end} onChange={setEnd} minimumDate={start ?? undefined} />
         </View>
 
-        <Field label="Who’s going?">
-          {children.isLoading ? (
-            <Text variant="caption" color={palette.inkSoft}>Loading your crew…</Text>
-          ) : (children.data ?? []).length === 0 ? (
-            <Card lift="none" style={styles.noKids}>
-              <Text variant="caption" color={palette.inkSoft}>
-                No one saved yet. Add your crew — kids, partner, grandparents, friends — in the Family
-                tab and they’ll show up here for every trip.
-              </Text>
-            </Card>
-          ) : (
-            <View style={styles.kidWrap}>
-              {(children.data ?? []).map((c) => {
-                const selected = childIds.includes(c.id);
-                const age = ageFromBirthYear(c.birth_year);
-                const sub =
-                  age != null ? `${age}` : c.relation ? RELATION_LABELS[c.relation as Relation] : 'traveler';
-                return (
-                  <Pressable
-                    key={c.id}
-                    onPress={() => toggleChild(c.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    style={[
-                      styles.kidChip,
-                      { borderColor: c.color },
-                      selected && { backgroundColor: c.color },
-                    ]}
-                  >
-                    <View style={[styles.kidDot, { backgroundColor: selected ? palette.white : c.color }]} />
-                    <Text variant="label" color={selected ? palette.white : palette.ink}>
-                      {c.name} · {sub}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
+        <Field label="Who’s going?" hint="Add anyone right here — kids, partner, grandparents, friends.">
+          <CrewPicker selectedIds={childIds} onToggle={toggleChild} accentBase={accentColor.base} />
         </Field>
 
         <ChoiceRow<TripType> label="Trip type" options={TRIP_TYPES} value={tripType} onChange={setTripType} />
