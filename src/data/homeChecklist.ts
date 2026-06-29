@@ -8,6 +8,7 @@ import type { TransitMode } from '../types/db';
 export function defaultHomeTasks(input: {
   tripDays: number;
   transitMode: TransitMode;
+  hasKids?: boolean;
 }): string[] {
   const base = [
     'Hold or forward the mail',
@@ -26,6 +27,12 @@ export function defaultHomeTasks(input: {
   }
   if (input.transitMode === 'drive' || input.transitMode === 'both') {
     base.push('Gas up the car & check tire pressure');
+  }
+  if (input.hasKids) {
+    base.push('Refill the kids’ meds & pack the medicine pouch');
+    base.push('Download shows & games on every kid’s device');
+    base.push('Pack each kid’s comfort item (lovey, blanket, sound machine)');
+    base.push('Share the schedule + emergency contacts with your sitter');
   }
   base.push('Charge everything & pack the chargers');
   return base;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, ProgressBar, Text } from '../../components/ui';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import {
   useAddHomeTask,
   useAddLogistics,
@@ -10,11 +11,56 @@ import {
   useHomeTasks,
   useLogistics,
   useSetHomeTaskDone,
+  useSyncDefaultHomeTasks,
+  useTravelers,
 } from '../../hooks';
 import { getAccent, palette, radius, spacing } from '../../theme/tokens';
-import { LOGISTICS_LABELS, type LogisticsKind, type Trip } from '../../types/db';
+import { isKid, LOGISTICS_LABELS, type LogisticsKind, type Trip } from '../../types/db';
 
 const KINDS: LogisticsKind[] = ['confirmation', 'lodging', 'flight', 'ground', 'reservation', 'contact', 'other'];
+
+/** Per-type fields. The first field is the headline (label); the rest compose the
+ *  detail. Contextual to what you picked — a flight asks for the airline, lodging
+ *  for the brand/address, ground transport for rental/rideshare, etc. */
+const FIELD_SETS: Record<LogisticsKind, { key: string; placeholder: string }[]> = {
+  flight: [
+    { key: 'Airline', placeholder: 'Airline (e.g. Delta, United)' },
+    { key: 'Flight #', placeholder: 'Flight number(s)' },
+    { key: 'Departs', placeholder: 'Departure date & time' },
+    { key: 'Confirmation #', placeholder: 'Confirmation / record locator' },
+  ],
+  lodging: [
+    { key: 'Name', placeholder: 'Hotel / rental name & brand' },
+    { key: 'Address', placeholder: 'Address' },
+    { key: 'Check-in', placeholder: 'Check-in date & time' },
+    { key: 'Confirmation #', placeholder: 'Confirmation number' },
+  ],
+  ground: [
+    { key: 'Provider', placeholder: 'Rental co. / rideshare / shuttle' },
+    { key: 'Type', placeholder: 'Rental car, taxi, train, shuttle…' },
+    { key: 'Pickup', placeholder: 'Pickup time / location' },
+    { key: 'Confirmation #', placeholder: 'Confirmation number' },
+  ],
+  reservation: [
+    { key: 'Name', placeholder: 'What’s reserved' },
+    { key: 'When', placeholder: 'Date & time' },
+    { key: 'Party', placeholder: 'Party size / notes' },
+    { key: 'Confirmation #', placeholder: 'Confirmation number' },
+  ],
+  confirmation: [
+    { key: 'For', placeholder: 'What it’s for' },
+    { key: 'Number', placeholder: 'Confirmation number' },
+  ],
+  contact: [
+    { key: 'Name', placeholder: 'Name' },
+    { key: 'Phone / email', placeholder: 'Phone or email' },
+    { key: 'Note', placeholder: 'Note (optional)' },
+  ],
+  other: [
+    { key: 'Label', placeholder: 'Label' },
+    { key: 'Details', placeholder: 'Details' },
+  ],
+};
 
 export function PrepPanel({ trip }: { trip: Trip }) {
   const accent = getAccent(trip.accent_color);
@@ -33,14 +79,25 @@ function LogisticsSection({ trip, accent, deep }: { trip: Trip; accent: string; 
 
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<LogisticsKind>('confirmation');
-  const [label, setLabel] = useState('');
-  const [detail, setDetail] = useState('');
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  function setKindReset(k: LogisticsKind) {
+    setKind(k);
+    setValues({});
+  }
 
   function submit() {
-    if (!label.trim()) return;
-    add.mutate({ kind, label: label.trim(), detail: detail.trim() || null });
-    setLabel('');
-    setDetail('');
+    const fields = FIELD_SETS[kind];
+    const filled = fields.filter((f) => (values[f.key] ?? '').trim());
+    if (filled.length === 0) return;
+    const primary = (values[fields[0].key] ?? '').trim();
+    const label = primary || LOGISTICS_LABELS[kind];
+    const detailParts = fields
+      .slice(primary ? 1 : 0)
+      .filter((f) => (values[f.key] ?? '').trim())
+      .map((f) => `${f.key}: ${values[f.key].trim()}`);
+    add.mutate({ kind, label, detail: detailParts.join('\n') || null });
+    setValues({});
     setOpen(false);
   }
 
@@ -90,13 +147,16 @@ function LogisticsSection({ trip, accent, deep }: { trip: Trip; accent: string; 
 
       {open && (
         <Card>
+          <Text variant="overline" color={palette.inkSoft}>
+            What kind?
+          </Text>
           <View style={styles.kindRow}>
             {KINDS.map((k) => {
               const active = kind === k;
               return (
                 <Pressable
                   key={k}
-                  onPress={() => setKind(k)}
+                  onPress={() => setKindReset(k)}
                   style={[styles.kindChip, active && { backgroundColor: palette.ink, borderColor: palette.ink }]}
                 >
                   <Text variant="caption" color={active ? palette.white : palette.inkSoft}>
@@ -106,21 +166,16 @@ function LogisticsSection({ trip, accent, deep }: { trip: Trip; accent: string; 
               );
             })}
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Label — e.g. Cruise booking, Hotel check-in"
-            placeholderTextColor={palette.inkSoft}
-            value={label}
-            onChangeText={setLabel}
-          />
-          <TextInput
-            style={[styles.input, styles.multi]}
-            placeholder="Details — number, time, address, notes"
-            placeholderTextColor={palette.inkSoft}
-            multiline
-            value={detail}
-            onChangeText={setDetail}
-          />
+          {FIELD_SETS[kind].map((f) => (
+            <TextInput
+              key={f.key}
+              style={styles.input}
+              placeholder={f.placeholder}
+              placeholderTextColor={palette.inkSoft}
+              value={values[f.key] ?? ''}
+              onChangeText={(t) => setValues((v) => ({ ...v, [f.key]: t }))}
+            />
+          ))}
           <View style={styles.formActions}>
             <Button label="Cancel" variant="ghost" onPress={() => setOpen(false)} />
             <Button label="Save" onPress={submit} loading={add.isPending} style={{ backgroundColor: accent }} />
@@ -133,22 +188,42 @@ function LogisticsSection({ trip, accent, deep }: { trip: Trip; accent: string; 
 
 function HomeSection({ trip, accent }: { trip: Trip; accent: string }) {
   const tasks = useHomeTasks(trip.id);
+  const travelers = useTravelers(trip.id);
   const setDone = useSetHomeTaskDone(trip.id);
   const add = useAddHomeTask(trip.id);
   const del = useDeleteHomeTask(trip.id);
+  const sync = useSyncDefaultHomeTasks(trip.id);
   const [label, setLabel] = useState('');
 
   const items = tasks.data ?? [];
   const done = items.filter((t) => t.is_done).length;
 
+  function refresh() {
+    let tripDays = 1;
+    try {
+      const n = differenceInCalendarDays(parseISO(trip.end_date), parseISO(trip.start_date));
+      tripDays = Number.isFinite(n) ? Math.max(1, n + 1) : 1;
+    } catch {
+      tripDays = 1;
+    }
+    const hasKids = (travelers.data ?? []).some((c) => isKid(c));
+    sync.mutate({ tripDays, transitMode: trip.transit_mode, hasKids });
+  }
+
   return (
     <View style={styles.section}>
-      <View style={styles.sectionTitle}>
-        <Ionicons name="home-outline" size={18} color={palette.ink} />
-        <Text variant="heading">Before you leave home</Text>
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionTitle}>
+          <Ionicons name="home-outline" size={18} color={palette.ink} />
+          <Text variant="heading">Before you leave home</Text>
+        </View>
+        <Pressable onPress={refresh} disabled={sync.isPending} hitSlop={8} accessibilityLabel="Refresh suggestions">
+          <Ionicons name="refresh" size={18} color={sync.isPending ? palette.inkSoft : accent} />
+        </Pressable>
       </View>
       <Text variant="caption" color={palette.inkSoft}>
-        The “did we forget to…” list. Mosey seeded the basics — add your own.
+        The “did we forget to…” list. Mosey seeded the basics — tap ⟳ after you change your crew to
+        pull in fresh suggestions, and add your own.
       </Text>
 
       {items.length > 0 && (

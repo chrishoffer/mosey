@@ -274,6 +274,15 @@ export function useSetHomeTaskDone(tripId: string) {
   });
 }
 
+export function useSyncDefaultHomeTasks(tripId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { tripDays: number; transitMode: import('./types/db').TransitMode; hasKids: boolean }) =>
+      api.syncDefaultHomeTasks(tripId, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.homeTasks(tripId) }),
+  });
+}
+
 export function useAddHomeTask(tripId: string) {
   const qc = useQueryClient();
   return useMutation({

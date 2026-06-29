@@ -105,9 +105,9 @@ export function DateField({ label, value, onChange, minimumDate }: Props) {
 const styles = StyleSheet.create({
   wrap: { gap: spacing.xs },
   field: {
-    backgroundColor: palette.paper,
+    backgroundColor: palette.card,
     borderColor: palette.line,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,

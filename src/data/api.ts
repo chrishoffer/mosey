@@ -9,6 +9,7 @@ import type {
   Profile,
   TimelineEvent,
   TransitItem,
+  TransitMode,
   Trip,
   TripDay,
   TripNote,
@@ -144,7 +145,7 @@ export async function createTrip(profileId: string, input: NewTripInput): Promis
   } catch {
     tripDays = 1;
   }
-  const homeRows = defaultHomeTasks({ tripDays, transitMode: trip.transit_mode }).map((label) => ({
+  const homeRows = defaultHomeTasks({ tripDays, transitMode: trip.transit_mode, hasKids }).map((label) => ({
     trip_id: trip.id,
     label,
     is_done: false,
@@ -349,6 +350,23 @@ export async function addHomeTask(tripId: string, label: string): Promise<HomeTa
 export async function deleteHomeTask(id: string): Promise<void> {
   const { error } = await supabase.from('home_tasks').delete().eq('id', id);
   if (error) throw error;
+}
+
+/** Adds any default leaving-home tasks (for the current trip + crew) that aren't
+ *  already on the list. Never removes or duplicates — safe to call after the crew
+ *  or trip details change. Returns how many were added. */
+export async function syncDefaultHomeTasks(
+  tripId: string,
+  input: { tripDays: number; transitMode: TransitMode; hasKids: boolean },
+): Promise<number> {
+  const existing = await fetchHomeTasks(tripId);
+  const have = new Set(existing.map((t) => t.label));
+  const toAdd = defaultHomeTasks(input).filter((label) => !have.has(label));
+  if (!toAdd.length) return 0;
+  const rows = toAdd.map((label) => ({ trip_id: tripId, label, is_done: false, source: 'default' as const }));
+  const { error } = await supabase.from('home_tasks').insert(rows);
+  if (error) throw error;
+  return toAdd.length;
 }
 
 // ---- Sharing (invites into MY account) ----

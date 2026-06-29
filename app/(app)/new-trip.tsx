@@ -254,9 +254,9 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.x3 },
   field: { gap: spacing.sm },
   input: {
-    backgroundColor: palette.paper,
+    backgroundColor: palette.card,
     borderColor: palette.line,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,

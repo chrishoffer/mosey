@@ -16,7 +16,21 @@ export interface EdgeResult<T = unknown> {
 async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<EdgeResult<T>> {
   try {
     const { data, error } = await supabase.functions.invoke<T>(fn, { body });
-    if (error) return { ok: false, data: null, error: error.message };
+    if (error) {
+      // Surface the Edge Function's own error message when it returns a non-2xx
+      // body, instead of the generic "non-2xx status code".
+      let message = error.message;
+      const ctx = (error as { context?: { json?: () => Promise<unknown> } }).context;
+      if (ctx?.json) {
+        try {
+          const parsed = (await ctx.json()) as { error?: string } | null;
+          if (parsed?.error) message = parsed.error;
+        } catch {
+          /* keep the generic message */
+        }
+      }
+      return { ok: false, data: null, error: message };
+    }
     return { ok: true, data: data ?? null, error: null };
   } catch (e) {
     return { ok: false, data: null, error: e instanceof Error ? e.message : 'Network error' };

@@ -4,6 +4,18 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Round 4 device feedback.** (1) **Tabs all visible** — trip-detail segmented
+  control now wraps to rows (flexWrap) instead of a horizontal scroll that hid Prep. (2)
+  **Contrast** — form inputs on the paper background (new-trip, DateField) are now white with a
+  1.5px border so they stop blending in. (3) **Contextual logistics** — the add form shows
+  type-specific fields (flight→airline/flight#/depart/conf; lodging→name/address/check-in; ground
+  →provider/type; etc.) composed into label+detail. (4) **Home checklist reacts to crew** —
+  `defaultHomeTasks` is now `hasKids`-aware, and a ⟳ refresh on the Home section adds any missing
+  defaults for the current trip+crew (never removes/dupes). (5) Client surfaces an Edge Function's
+  own error body instead of "non-2xx". The day-plan "non-2xx" was a **deploy gap** —
+  `generate-day-plan` (added round 2) needs deploying. tsc clean, 24/24.
+
+
 - **2026-06-29 — Whole-account sharing with full edit (Chris chose 1b + 2a).** Migration
   `0004_sharing.sql` adds `account_members` (owner_id, member_id, invited_email, status) and a
   SECURITY DEFINER `can_access(owner)` used to re-point EVERY data policy: you can reach a row

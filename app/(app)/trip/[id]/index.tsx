@@ -166,11 +166,7 @@ export default function TripDetail() {
 
         <StatusBar status={t.status} accent={accent.base} onSet={setStatus} onPostTrip={() => router.push(`/(app)/trip/${t.id}/post-trip`)} />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.segmented}
-        >
+        <View style={styles.segmented}>
           {TABS.map((tb) => {
             const active = tab === tb.key;
             return (
@@ -179,16 +175,16 @@ export default function TripDetail() {
                 onPress={() => setTab(tb.key)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
-                style={[styles.segment, active && { backgroundColor: accent.base }]}
+                style={[styles.segment, active && { backgroundColor: accent.base, borderColor: accent.base }]}
               >
-                <Ionicons name={tb.icon} size={16} color={active ? palette.white : palette.inkSoft} />
+                <Ionicons name={tb.icon} size={15} color={active ? palette.white : palette.inkSoft} />
                 <Text variant="label" color={active ? palette.white : palette.inkSoft}>
                   {tb.label}
                 </Text>
               </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
 
         <View style={styles.panel}>
           {tab === 'timeline' && <TimelinePanel trip={t} />}
@@ -301,6 +297,7 @@ const styles = StyleSheet.create({
   crewChip: { borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
   segmented: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     paddingVertical: 2,
   },
@@ -310,12 +307,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     backgroundColor: palette.card,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: palette.line,
     borderRadius: radius.pill,
-    minHeight: 44,
+    minHeight: 42,
   },
   panel: { minHeight: 200 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
