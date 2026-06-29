@@ -22,6 +22,16 @@ export type LogisticsKind =
   | 'contact'
   | 'other';
 export type HomeTaskSource = 'default' | 'manual';
+export type MemberStatus = 'pending' | 'active' | 'revoked';
+
+export interface AccountMember {
+  id: string;
+  owner_id: string;
+  member_id: string | null;
+  invited_email: string;
+  status: MemberStatus;
+  created_at: string;
+}
 
 export interface Profile {
   id: string;

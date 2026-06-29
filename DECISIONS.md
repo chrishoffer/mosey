@@ -4,6 +4,19 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Whole-account sharing with full edit (Chris chose 1b + 2a).** Migration
+  `0004_sharing.sql` adds `account_members` (owner_id, member_id, invited_email, status) and a
+  SECURITY DEFINER `can_access(owner)` used to re-point EVERY data policy: you can reach a row
+  if you own the account or are an active member. `claim_invites()` RPC links a pending invite
+  to the caller by matching their JWT email (so you can only ever claim invites sent to *your*
+  address); only an owner can create invites (RLS `owner_id = auth.uid()`). Client: `AccountProvider`
+  tracks the active account + a switcher (Trips header + Settings); account-scoped reads/writes
+  (`fetchTrips`/`fetchChildren`/`createTrip`/`createChild`/profile) now key off the current account
+  id; Settings sharing UI invites by email and lists pending/active members. No edge-function
+  changes → migration + pull only, no redeploy. Non-shared path is unchanged (can_access(self)=true).
+  Deferred to next: richer questionnaire feeding the AI. tsc clean, 20/20.
+
+
 - **2026-06-29 — Round 3 device feedback (client-only, no DB/redeploy).** (1) **Add crew during
   setup** — new `CrewPicker` (saved chips + inline "Add someone") replaces the static chip list in
   new-trip. (2) **Edit crew on an existing trip** — a "Who's going" card on trip detail with the

@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type {
+  AccountMember,
   Child,
   HomeTask,
   LogisticsItem,
@@ -35,8 +36,12 @@ export async function updateDisplayName(userId: string, displayName: string): Pr
 }
 
 // ---- Children ----
-export async function fetchChildren(): Promise<Child[]> {
-  const { data, error } = await supabase.from('children').select('*').order('created_at', { ascending: true });
+export async function fetchChildren(accountId: string): Promise<Child[]> {
+  const { data, error } = await supabase
+    .from('children')
+    .select('*')
+    .eq('profile_id', accountId)
+    .order('created_at', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
@@ -71,8 +76,12 @@ export async function deleteChild(id: string): Promise<void> {
 }
 
 // ---- Trips ----
-export async function fetchTrips(): Promise<Trip[]> {
-  const { data, error } = await supabase.from('trips').select('*').order('start_date', { ascending: true });
+export async function fetchTrips(accountId: string): Promise<Trip[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('profile_id', accountId)
+    .order('start_date', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
@@ -339,5 +348,31 @@ export async function addHomeTask(tripId: string, label: string): Promise<HomeTa
 
 export async function deleteHomeTask(id: string): Promise<void> {
   const { error } = await supabase.from('home_tasks').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---- Sharing (invites into MY account) ----
+export async function fetchSentInvites(ownerId: string): Promise<AccountMember[]> {
+  const { data, error } = await supabase
+    .from('account_members')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function inviteMember(ownerId: string, email: string): Promise<void> {
+  const { error } = await supabase
+    .from('account_members')
+    .upsert(
+      { owner_id: ownerId, invited_email: email.trim().toLowerCase(), status: 'pending', member_id: null },
+      { onConflict: 'owner_id,invited_email' },
+    );
+  if (error) throw error;
+}
+
+export async function revokeInvite(id: string): Promise<void> {
+  const { error } = await supabase.from('account_members').delete().eq('id', id);
   if (error) throw error;
 }

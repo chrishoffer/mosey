@@ -15,6 +15,7 @@ import {
 import { View } from 'react-native';
 import { queryClient } from '../src/lib/queryClient';
 import { AuthProvider, useAuth } from '../src/lib/auth';
+import { AccountProvider } from '../src/lib/account';
 import { palette } from '../src/theme/tokens';
 
 /** Redirects between the (auth) and (app) route groups based on session. */
@@ -63,8 +64,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <StatusBar style="dark" />
-          <AuthGate />
+          <AccountProvider>
+            <StatusBar style="dark" />
+            <AuthGate />
+          </AccountProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

@@ -2,17 +2,19 @@ import React, { useMemo } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, Screen, Text } from '../../src/components/ui';
+import { Button, Card, Pill, Screen, Text } from '../../src/components/ui';
 import { TripCard } from '../../src/components/TripCard';
 import { Logo } from '../../src/components/Logo';
 import { useProfile, useReadiness, useTimeline, useTrips, useTravelers } from '../../src/hooks';
 import { useAuth } from '../../src/lib/auth';
+import { useAccount } from '../../src/lib/account';
 import { accents, palette, spacing } from '../../src/theme/tokens';
 import type { Trip } from '../../src/types/db';
 
 export default function Shelf() {
   const router = useRouter();
   const { configured, session } = useAuth();
+  const { accounts, currentAccountId, setCurrentAccountId } = useAccount();
   const { data: profile } = useProfile();
   const trips = useTrips();
 
@@ -45,6 +47,21 @@ export default function Shelf() {
             {subLine(!!active, planning.length, archived.length, profile?.display_name)}
           </Text>
         </View>
+
+        {accounts.length > 1 && (
+          <View style={styles.switcher}>
+            {accounts.map((a) => (
+              <Pill
+                key={a.id}
+                label={a.label}
+                active={a.id === currentAccountId}
+                tint={palette.coral}
+                fg={palette.white}
+                onPress={() => setCurrentAccountId(a.id)}
+              />
+            ))}
+          </View>
+        )}
 
         {!configured && <ConfigNotice />}
 
@@ -188,6 +205,7 @@ const styles = StyleSheet.create({
   wordmark: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   greetBlock: { marginTop: -spacing.xs },
+  switcher: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   section: { gap: spacing.sm },
   sectionTitle: { marginLeft: spacing.xs },
   empty: { padding: spacing.xl },

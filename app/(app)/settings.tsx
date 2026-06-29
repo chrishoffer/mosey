@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { Button, Card, Divider, Screen, Text } from '../../src/components/ui';
+import { Button, Card, Divider, Pill, Screen, Text } from '../../src/components/ui';
 import { Sparkle } from '../../src/components/Sparkle';
 import { ensurePermission } from '../../src/lib/notifications';
 import { useChildren, useCreateChild, useDeleteChild, useProfile } from '../../src/hooks';
 import { useAuth } from '../../src/lib/auth';
-import { updateDisplayName } from '../../src/data/api';
+import { useAccount } from '../../src/lib/account';
+import { fetchSentInvites, inviteMember, revokeInvite, updateDisplayName } from '../../src/data/api';
+import type { AccountMember } from '../../src/types/db';
 import { kidColors, palette, radius, spacing } from '../../src/theme/tokens';
 import { ageFromBirthYear, RELATION_LABELS, type Relation } from '../../src/types/db';
 
@@ -75,6 +77,8 @@ export default function Settings() {
         <Text variant="body" color={palette.inkSoft}>
           Your crew, your account, and how Mosey reaches you.
         </Text>
+
+        <AccountSwitcher />
 
         <Card>
           <Text variant="overline" color={palette.inkSoft}>
@@ -288,19 +292,127 @@ function NotificationsSection() {
   );
 }
 
+function AccountSwitcher() {
+  const { accounts, currentAccountId, setCurrentAccountId } = useAccount();
+  if (accounts.length <= 1) return null;
+  return (
+    <Card lift="none" style={{ gap: spacing.sm }}>
+      <Text variant="overline" color={palette.inkSoft}>
+        You’re viewing
+      </Text>
+      <View style={styles.switchRow}>
+        {accounts.map((a) => (
+          <Pill
+            key={a.id}
+            label={a.label}
+            active={a.id === currentAccountId}
+            tint={palette.coral}
+            fg={palette.white}
+            onPress={() => setCurrentAccountId(a.id)}
+          />
+        ))}
+      </View>
+    </Card>
+  );
+}
+
 function SharingSection() {
+  const { session } = useAuth();
+  const { isShared } = useAccount();
+  const uid = session?.user?.id ?? '';
+  const [email, setEmail] = useState('');
+  const [invites, setInvites] = useState<AccountMember[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!uid) return;
+    try {
+      setInvites(await fetchSentInvites(uid));
+    } catch {
+      /* sharing migration not applied yet */
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Only the account OWNER invites people; when viewing a shared account, just explain.
+  if (isShared) {
+    return (
+      <Card lift="none">
+        <Text variant="caption" color={palette.inkSoft}>
+          You’re in a shared account. Sharing is managed by its owner.
+        </Text>
+      </Card>
+    );
+  }
+
+  async function invite() {
+    if (!email.includes('@')) {
+      setMsg('Enter a valid email address.');
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      await inviteMember(uid, email);
+      setEmail('');
+      setMsg('Invited. When they sign in to Mosey with that email, they’ll get full access to your trips.');
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Could not send the invite.');
+    }
+    setBusy(false);
+  }
+
   return (
     <Card lift="none" style={{ gap: spacing.sm }}>
       <View style={styles.notifRow}>
         <Ionicons name="people-circle-outline" size={22} color={palette.coral} />
-        <View style={{ flex: 1 }}>
-          <Text variant="bodyStrong">Share a trip with a co-parent</Text>
-          <Text variant="caption" color={palette.inkSoft}>
-            Invite your partner so you both see the same packing list, timeline, and checklists —
-            update once, you’re both covered. We’re building this now; it’ll appear here shortly.
-          </Text>
-        </View>
+        <Text variant="caption" color={palette.inkSoft} style={{ flex: 1 }}>
+          Invite a co-parent by email. They’ll see and edit the same trips, lists, and checklists —
+          update once, you’re both covered.
+        </Text>
       </View>
+      <View style={styles.inviteRow}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginTop: 0 }]}
+          placeholder="partner@email.com"
+          placeholderTextColor={palette.inkSoft}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <Button label="Invite" onPress={invite} loading={busy} />
+      </View>
+      {msg ? (
+        <Text variant="caption" color={palette.inkSoft}>
+          {msg}
+        </Text>
+      ) : null}
+      {invites.map((iv) => (
+        <View key={iv.id} style={styles.inviteItem}>
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyStrong">{iv.invited_email}</Text>
+            <Text variant="caption" color={iv.status === 'active' ? palette.success : palette.inkSoft}>
+              {iv.status === 'active' ? 'Active — has access' : 'Pending — waiting for them to sign in'}
+            </Text>
+          </View>
+          <Pressable
+            onPress={async () => {
+              await revokeInvite(iv.id);
+              load();
+            }}
+            hitSlop={8}
+            accessibilityLabel={`Remove ${iv.invited_email}`}
+          >
+            <Ionicons name="close" size={18} color={palette.inkSoft} />
+          </Pressable>
+        </View>
+      ))}
     </Card>
   );
 }
@@ -383,4 +495,7 @@ const styles = StyleSheet.create({
   addActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.lg },
   plusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   notifRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  switchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  inviteRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  inviteItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingTop: spacing.xs },
 });

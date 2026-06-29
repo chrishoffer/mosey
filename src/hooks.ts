@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { qk } from './lib/queryClient';
-import { useAuth } from './lib/auth';
+import { useAccount } from './lib/account';
 import * as api from './data/api';
 import type { Child, HomeTask, LogisticsKind, PackingItem, TimelineEvent, TransitItem } from './types/db';
 
-/** Convenience: the signed-in user's id (= their profile id). */
+/** The account we're currently acting in (own account, or a shared one). All
+ *  account-scoped reads/writes use this; RLS guarantees access. */
 function useUserId(): string | null {
-  return useAuth().session?.user?.id ?? null;
+  return useAccount().currentAccountId;
 }
 
 // ---- Family ----
@@ -22,7 +23,11 @@ export function useProfile() {
 
 export function useChildren() {
   const userId = useUserId();
-  return useQuery({ queryKey: qk.children, queryFn: api.fetchChildren, enabled: !!userId });
+  return useQuery({
+    queryKey: qk.children,
+    queryFn: () => api.fetchChildren(userId!),
+    enabled: !!userId,
+  });
 }
 
 export function useCreateChild() {
@@ -59,7 +64,7 @@ export function useDeleteChild() {
 // ---- Trips ----
 export function useTrips() {
   const userId = useUserId();
-  return useQuery({ queryKey: qk.trips, queryFn: api.fetchTrips, enabled: !!userId });
+  return useQuery({ queryKey: qk.trips, queryFn: () => api.fetchTrips(userId!), enabled: !!userId });
 }
 
 export function useTrip(id: string) {
