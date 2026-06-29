@@ -1,0 +1,10 @@
+project_id = "mosey"
+
+[functions.generate-packing-list]
+verify_jwt = true
+
+[functions.generate-transit-kit]
+verify_jwt = true
+
+[functions.ask-mosey]
+verify_jwt = true
