@@ -31,6 +31,10 @@ export function generateTransitKit(tripId: string) {
   return invoke<{ created: number }>('generate-transit-kit', { trip_id: tripId });
 }
 
+export function generateDayPlan(tripId: string) {
+  return invoke<{ created: number }>('generate-day-plan', { trip_id: tripId });
+}
+
 export interface AskMoseyReply {
   /** Plain, generic guidance — never names a real place (guardrail #2). */
   answer: string;

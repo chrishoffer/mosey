@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './ui';
+import { ReadinessRing } from './ReadinessRing';
 import { getAccent, palette, radius, shadow, spacing } from '../theme/tokens';
 import { countdownLabel, fmtDateRange } from '../lib/dates';
 import type { Trip } from '../types/db';
@@ -12,12 +13,14 @@ interface Props {
   travelerNames?: string[];
   /** Single live nudge surfaced on the active trip (the next thing to do). */
   liveNudge?: string | null;
+  /** 0..1 readiness for the active card's ring (null = nothing to track yet). */
+  readiness?: number | null;
   onPress?: () => void;
 }
 
 /** The color-blocked shelf card. Active trip = rich gradient hero with countdown +
  *  one live nudge. Planning = bold tint. Archived = soft tint with a memory hint. */
-export function TripCard({ trip, travelerNames = [], liveNudge, onPress }: Props) {
+export function TripCard({ trip, travelerNames = [], liveNudge, readiness, onPress }: Props) {
   const accent = getAccent(trip.accent_color);
   const isActive = trip.status === 'active';
   const isArchived = trip.status === 'archived';
@@ -61,9 +64,19 @@ export function TripCard({ trip, travelerNames = [], liveNudge, onPress }: Props
 
       {isActive && (
         <View style={styles.countdownRow}>
-          <Text variant="heading" color={palette.white}>
+          <Text variant="heading" color={palette.white} style={{ flex: 1 }}>
             {countdownLabel(trip.start_date, trip.end_date)}
           </Text>
+          {readiness != null ? (
+            <ReadinessRing
+              ratio={readiness}
+              size={52}
+              strokeWidth={6}
+              color={palette.white}
+              trackColor="rgba(255,255,255,0.3)"
+              centerLabel={`${Math.round(readiness * 100)}%`}
+            />
+          ) : null}
         </View>
       )}
 
@@ -152,6 +165,9 @@ const styles = StyleSheet.create({
   },
   countdownRow: {
     marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   nudge: {
     marginTop: spacing.md,

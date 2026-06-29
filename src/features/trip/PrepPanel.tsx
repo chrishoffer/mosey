@@ -1,0 +1,254 @@
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Button, Card, ProgressBar, Text } from '../../components/ui';
+import {
+  useAddHomeTask,
+  useAddLogistics,
+  useDeleteHomeTask,
+  useDeleteLogistics,
+  useHomeTasks,
+  useLogistics,
+  useSetHomeTaskDone,
+} from '../../hooks';
+import { getAccent, palette, radius, spacing } from '../../theme/tokens';
+import { LOGISTICS_LABELS, type LogisticsKind, type Trip } from '../../types/db';
+
+const KINDS: LogisticsKind[] = ['confirmation', 'lodging', 'flight', 'ground', 'reservation', 'contact', 'other'];
+
+export function PrepPanel({ trip }: { trip: Trip }) {
+  const accent = getAccent(trip.accent_color);
+  return (
+    <View style={styles.wrap}>
+      <LogisticsSection trip={trip} accent={accent.base} deep={accent.deep} />
+      <HomeSection trip={trip} accent={accent.base} />
+    </View>
+  );
+}
+
+function LogisticsSection({ trip, accent, deep }: { trip: Trip; accent: string; deep: string }) {
+  const logistics = useLogistics(trip.id);
+  const add = useAddLogistics(trip.id);
+  const del = useDeleteLogistics(trip.id);
+
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<LogisticsKind>('confirmation');
+  const [label, setLabel] = useState('');
+  const [detail, setDetail] = useState('');
+
+  function submit() {
+    if (!label.trim()) return;
+    add.mutate({ kind, label: label.trim(), detail: detail.trim() || null });
+    setLabel('');
+    setDetail('');
+    setOpen(false);
+  }
+
+  const items = logistics.data ?? [];
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionTitle}>
+          <Ionicons name="document-text-outline" size={18} color={deep} />
+          <Text variant="heading">Logistics</Text>
+        </View>
+        {!open && (
+          <Button label="Add" variant="secondary" onPress={() => setOpen(true)} icon={<Ionicons name="add" size={16} color={palette.ink} />} />
+        )}
+      </View>
+      <Text variant="caption" color={palette.inkSoft}>
+        Confirmation numbers, check-in times, the address you’ll forget at the gate.
+      </Text>
+
+      {items.length === 0 && !open ? (
+        <Card lift="none">
+          <Text variant="body" color={palette.inkSoft}>
+            Nothing stored yet. Add your confirmation numbers and times so they’re one tap away.
+          </Text>
+        </Card>
+      ) : (
+        items.map((it) => (
+          <Card key={it.id} lift="soft" style={styles.logRow}>
+            <View style={{ flex: 1 }}>
+              <Text variant="overline" color={deep}>
+                {LOGISTICS_LABELS[it.kind]}
+              </Text>
+              <Text variant="bodyStrong">{it.label}</Text>
+              {it.detail ? (
+                <Text variant="body" color={palette.inkSoft} selectable>
+                  {it.detail}
+                </Text>
+              ) : null}
+            </View>
+            <Pressable onPress={() => del.mutate(it.id)} hitSlop={8} accessibilityLabel={`Delete ${it.label}`}>
+              <Ionicons name="close" size={18} color={palette.inkSoft} />
+            </Pressable>
+          </Card>
+        ))
+      )}
+
+      {open && (
+        <Card>
+          <View style={styles.kindRow}>
+            {KINDS.map((k) => {
+              const active = kind === k;
+              return (
+                <Pressable
+                  key={k}
+                  onPress={() => setKind(k)}
+                  style={[styles.kindChip, active && { backgroundColor: palette.ink, borderColor: palette.ink }]}
+                >
+                  <Text variant="caption" color={active ? palette.white : palette.inkSoft}>
+                    {LOGISTICS_LABELS[k]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Label — e.g. Cruise booking, Hotel check-in"
+            placeholderTextColor={palette.inkSoft}
+            value={label}
+            onChangeText={setLabel}
+          />
+          <TextInput
+            style={[styles.input, styles.multi]}
+            placeholder="Details — number, time, address, notes"
+            placeholderTextColor={palette.inkSoft}
+            multiline
+            value={detail}
+            onChangeText={setDetail}
+          />
+          <View style={styles.formActions}>
+            <Button label="Cancel" variant="ghost" onPress={() => setOpen(false)} />
+            <Button label="Save" onPress={submit} loading={add.isPending} style={{ backgroundColor: accent }} />
+          </View>
+        </Card>
+      )}
+    </View>
+  );
+}
+
+function HomeSection({ trip, accent }: { trip: Trip; accent: string }) {
+  const tasks = useHomeTasks(trip.id);
+  const setDone = useSetHomeTaskDone(trip.id);
+  const add = useAddHomeTask(trip.id);
+  const del = useDeleteHomeTask(trip.id);
+  const [label, setLabel] = useState('');
+
+  const items = tasks.data ?? [];
+  const done = items.filter((t) => t.is_done).length;
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionTitle}>
+        <Ionicons name="home-outline" size={18} color={palette.ink} />
+        <Text variant="heading">Before you leave home</Text>
+      </View>
+      <Text variant="caption" color={palette.inkSoft}>
+        The “did we forget to…” list. Mosey seeded the basics — add your own.
+      </Text>
+
+      {items.length > 0 && (
+        <View style={{ marginTop: spacing.xs }}>
+          <ProgressBar value={items.length ? done / items.length : 0} color={accent} />
+        </View>
+      )}
+
+      {items.map((t) => (
+        <Pressable
+          key={t.id}
+          onPress={() => setDone.mutate({ id: t.id, is_done: !t.is_done })}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: t.is_done }}
+          accessibilityLabel={`${t.label}, ${t.is_done ? 'done' : 'not done'}`}
+        >
+          <Card lift="soft" style={styles.taskRow}>
+            <Ionicons
+              name={t.is_done ? 'checkmark-circle' : 'ellipse-outline'}
+              size={24}
+              color={t.is_done ? accent : palette.inkSoft}
+            />
+            <Text
+              variant="bodyStrong"
+              color={t.is_done ? palette.inkSoft : palette.ink}
+              style={[{ flex: 1 }, t.is_done && styles.struck]}
+            >
+              {t.label}
+            </Text>
+            {t.source === 'manual' ? (
+              <Pressable onPress={() => del.mutate(t.id)} hitSlop={8} accessibilityLabel={`Delete ${t.label}`}>
+                <Ionicons name="close" size={18} color={palette.inkSoft} />
+              </Pressable>
+            ) : null}
+          </Card>
+        </Pressable>
+      ))}
+
+      <Card lift="none" style={styles.addCard}>
+        <TextInput
+          style={styles.input}
+          placeholder="Add your own — e.g. drop dog at sitter"
+          placeholderTextColor={palette.inkSoft}
+          value={label}
+          onChangeText={setLabel}
+          onSubmitEditing={() => {
+            if (label.trim()) {
+              add.mutate(label.trim());
+              setLabel('');
+            }
+          }}
+          returnKeyType="done"
+        />
+        <Button
+          label="Add task"
+          variant="secondary"
+          loading={add.isPending}
+          onPress={() => {
+            if (label.trim()) {
+              add.mutate(label.trim());
+              setLabel('');
+            }
+          }}
+        />
+      </Card>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: { gap: spacing.xl, paddingBottom: spacing.x2 },
+  section: { gap: spacing.sm },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  logRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  kindRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  kindChip: {
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    backgroundColor: palette.card,
+  },
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  struck: { textDecorationLine: 'line-through' },
+  addCard: { backgroundColor: palette.card, gap: spacing.sm, marginTop: spacing.xs },
+  input: {
+    backgroundColor: palette.paper,
+    borderColor: palette.line,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontFamily: 'HankenGrotesk_500Medium',
+    fontSize: 16,
+    color: palette.ink,
+    minHeight: 48,
+    marginTop: spacing.sm,
+  },
+  multi: { minHeight: 72, textAlignVertical: 'top' },
+  formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.md },
+});

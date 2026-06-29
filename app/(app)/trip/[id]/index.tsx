@@ -7,16 +7,21 @@ import { Sparkle } from '../../../../src/components/Sparkle';
 import { TimelinePanel } from '../../../../src/features/trip/TimelinePanel';
 import { PackingPanel } from '../../../../src/features/trip/PackingPanel';
 import { GettingTherePanel } from '../../../../src/features/trip/GettingTherePanel';
-import { useTrip, useUpdateTrip } from '../../../../src/hooks';
+import { DayPlanPanel } from '../../../../src/features/trip/DayPlanPanel';
+import { PrepPanel } from '../../../../src/features/trip/PrepPanel';
+import { ReadinessRing } from '../../../../src/components/ReadinessRing';
+import { useReadiness, useTrip, useUpdateTrip } from '../../../../src/hooks';
 import { getAccent, palette, radius, spacing } from '../../../../src/theme/tokens';
 import { fmtDateRange } from '../../../../src/lib/dates';
 import type { TripStatus } from '../../../../src/types/db';
 
-type Tab = 'timeline' | 'packing' | 'transit';
+type Tab = 'timeline' | 'days' | 'packing' | 'transit' | 'prep';
 const TABS: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'timeline', label: 'Timeline', icon: 'git-commit-outline' },
+  { key: 'days', label: 'Days', icon: 'sunny-outline' },
   { key: 'packing', label: 'Packing', icon: 'checkbox-outline' },
   { key: 'transit', label: 'Getting there', icon: 'airplane-outline' },
+  { key: 'prep', label: 'Prep', icon: 'home-outline' },
 ];
 
 export default function TripDetail() {
@@ -24,6 +29,7 @@ export default function TripDetail() {
   const router = useRouter();
   const trip = useTrip(id);
   const updateTrip = useUpdateTrip();
+  const readiness = useReadiness(id);
   const [tab, setTab] = useState<Tab>('timeline');
 
   if (trip.isLoading) {
@@ -88,9 +94,32 @@ export default function TripDetail() {
           ) : null}
         </View>
 
+        {readiness.total > 0 && (
+          <Card lift="soft" style={styles.readyCard}>
+            <ReadinessRing
+              ratio={readiness.overall}
+              size={66}
+              color={accent.base}
+              centerLabel={`${Math.round(readiness.overall * 100)}%`}
+            />
+            <View style={{ flex: 1 }}>
+              <Text variant="bodyStrong">Trip readiness</Text>
+              <Text variant="caption" color={palette.inkSoft}>
+                {readiness.parts
+                  .map((p) => `${p.label} ${p.done}/${p.total}`)
+                  .join(' · ')}
+              </Text>
+            </View>
+          </Card>
+        )}
+
         <StatusBar status={t.status} accent={accent.base} onSet={setStatus} onPostTrip={() => router.push(`/(app)/trip/${t.id}/post-trip`)} />
 
-        <View style={styles.segmented}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.segmented}
+        >
           {TABS.map((tb) => {
             const active = tab === tb.key;
             return (
@@ -108,12 +137,14 @@ export default function TripDetail() {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
         <View style={styles.panel}>
           {tab === 'timeline' && <TimelinePanel trip={t} />}
+          {tab === 'days' && <DayPlanPanel trip={t} />}
           {tab === 'packing' && <PackingPanel trip={t} />}
           {tab === 'transit' && <GettingTherePanel trip={t} />}
+          {tab === 'prep' && <PrepPanel trip={t} />}
         </View>
       </ScrollView>
     </Screen>
@@ -211,22 +242,22 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: palette.card },
+  readyCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   segmented: {
     flexDirection: 'row',
-    backgroundColor: palette.card,
-    borderRadius: radius.pill,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: palette.line,
-    gap: 4,
+    gap: spacing.sm,
+    paddingVertical: 2,
   },
   segment: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: palette.card,
+    borderWidth: 1,
+    borderColor: palette.line,
     borderRadius: radius.pill,
     minHeight: 44,
   },

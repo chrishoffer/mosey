@@ -21,4 +21,7 @@ export const qk = {
   transit: (tripId: string) => ['transit', tripId] as const,
   travelers: (tripId: string) => ['travelers', tripId] as const,
   tripNote: (tripId: string) => ['tripNote', tripId] as const,
+  days: (tripId: string) => ['days', tripId] as const,
+  logistics: (tripId: string) => ['logistics', tripId] as const,
+  homeTasks: (tripId: string) => ['homeTasks', tripId] as const,
 };

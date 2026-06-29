@@ -1,14 +1,20 @@
 import { supabase } from '../lib/supabase';
 import type {
   Child,
+  HomeTask,
+  LogisticsItem,
+  LogisticsKind,
   PackingItem,
   Profile,
   TimelineEvent,
   TransitItem,
   Trip,
+  TripDay,
   TripNote,
 } from '../types/db';
 import { generateTimeline } from './timeline';
+import { defaultHomeTasks } from './homeChecklist';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 
 /**
  * Plain data-access functions over Supabase. RLS enforces that the user only ever
@@ -121,6 +127,25 @@ export async function createTrip(profileId: string, input: NewTripInput): Promis
     if (evErr) throw evErr;
   }
 
+  // Seed the leaving-home checklist (deterministic defaults).
+  let tripDays = 1;
+  try {
+    const n = differenceInCalendarDays(parseISO(trip.end_date), parseISO(trip.start_date));
+    tripDays = Number.isFinite(n) ? Math.max(1, n + 1) : 1;
+  } catch {
+    tripDays = 1;
+  }
+  const homeRows = defaultHomeTasks({ tripDays, transitMode: trip.transit_mode }).map((label) => ({
+    trip_id: trip.id,
+    label,
+    is_done: false,
+    source: 'default' as const,
+  }));
+  if (homeRows.length) {
+    const { error: htErr } = await supabase.from('home_tasks').insert(homeRows);
+    if (htErr) throw htErr;
+  }
+
   return trip;
 }
 
@@ -222,5 +247,76 @@ export async function saveTripNote(
   input: { hits: string | null; misses: string | null },
 ): Promise<void> {
   const { error } = await supabase.from('trip_notes').insert({ trip_id: tripId, ...input });
+  if (error) throw error;
+}
+
+// ---- Day plan ----
+export async function fetchDays(tripId: string): Promise<TripDay[]> {
+  const { data, error } = await supabase
+    .from('trip_days')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('day_index', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ---- Logistics ----
+export async function fetchLogistics(tripId: string): Promise<LogisticsItem[]> {
+  const { data, error } = await supabase
+    .from('logistics_items')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function addLogistics(
+  tripId: string,
+  input: { kind: LogisticsKind; label: string; detail: string | null },
+): Promise<LogisticsItem> {
+  const { data, error } = await supabase
+    .from('logistics_items')
+    .insert({ trip_id: tripId, ...input })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteLogistics(id: string): Promise<void> {
+  const { error } = await supabase.from('logistics_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---- Home tasks ----
+export async function fetchHomeTasks(tripId: string): Promise<HomeTask[]> {
+  const { data, error } = await supabase
+    .from('home_tasks')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function setHomeTaskDone(id: string, is_done: boolean): Promise<void> {
+  const { error } = await supabase.from('home_tasks').update({ is_done }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function addHomeTask(tripId: string, label: string): Promise<HomeTask> {
+  const { data, error } = await supabase
+    .from('home_tasks')
+    .insert({ trip_id: tripId, label, is_done: false, source: 'manual' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteHomeTask(id: string): Promise<void> {
+  const { error } = await supabase.from('home_tasks').delete().eq('id', id);
   if (error) throw error;
 }

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Screen, Text } from '../../src/components/ui';
 import { TripCard } from '../../src/components/TripCard';
 import { Logo } from '../../src/components/Logo';
-import { useProfile, useTimeline, useTrips, useTravelers } from '../../src/hooks';
+import { useProfile, useReadiness, useTimeline, useTrips, useTravelers } from '../../src/hooks';
 import { useAuth } from '../../src/lib/auth';
 import { accents, palette, spacing } from '../../src/theme/tokens';
 import type { Trip } from '../../src/types/db';
@@ -104,6 +104,7 @@ export default function Shelf() {
 function ActiveTrip({ trip, onPress }: { trip: Trip; onPress: () => void }) {
   const travelers = useTravelers(trip.id);
   const timeline = useTimeline(trip.id);
+  const readiness = useReadiness(trip.id);
   const liveNudge = useMemo(() => {
     const now = Date.now();
     const upcoming = (timeline.data ?? [])
@@ -117,6 +118,7 @@ function ActiveTrip({ trip, onPress }: { trip: Trip; onPress: () => void }) {
       trip={trip}
       travelerNames={(travelers.data ?? []).map((c) => c.name)}
       liveNudge={liveNudge}
+      readiness={readiness.total > 0 ? readiness.overall : null}
       onPress={onPress}
     />
   );

@@ -13,6 +13,15 @@ export type TripStatus = 'planning' | 'active' | 'archived';
 export type ItemSource = 'ai' | 'manual';
 export type TimelineKind = 'milestone' | 'nudge';
 export type TransitKind = 'carryon' | 'download' | 'activity' | 'playlist';
+export type LogisticsKind =
+  | 'lodging'
+  | 'flight'
+  | 'ground'
+  | 'reservation'
+  | 'confirmation'
+  | 'contact'
+  | 'other';
+export type HomeTaskSource = 'default' | 'manual';
 
 export interface Profile {
   id: string;
@@ -98,6 +107,49 @@ export interface TripNote {
   misses: string | null;
   created_at: string;
 }
+
+/** A day in the trip's gentle flow plan (AI-generated, generic — no real places). */
+export interface TripDay {
+  id: string;
+  trip_id: string;
+  day_index: number;
+  date: string; // yyyy-mm-dd
+  title: string;
+  morning: string | null;
+  afternoon: string | null;
+  evening: string | null;
+  created_at: string;
+}
+
+/** A logistics note: confirmation numbers, flight/check-in times, lodging, etc. */
+export interface LogisticsItem {
+  id: string;
+  trip_id: string;
+  kind: LogisticsKind;
+  label: string;
+  detail: string | null;
+  created_at: string;
+}
+
+/** A "leaving home" task (hold mail, pet sitter, thermostat…). */
+export interface HomeTask {
+  id: string;
+  trip_id: string;
+  label: string;
+  is_done: boolean;
+  source: HomeTaskSource;
+  created_at: string;
+}
+
+export const LOGISTICS_LABELS: Record<LogisticsKind, string> = {
+  lodging: 'Lodging',
+  flight: 'Flight',
+  ground: 'Ground transport',
+  reservation: 'Reservation',
+  confirmation: 'Confirmation #',
+  contact: 'Contact',
+  other: 'Other',
+};
 
 /** Derived helpers */
 export function ageFromBirthYear(birthYear: number | null, today = new Date()): number | null {

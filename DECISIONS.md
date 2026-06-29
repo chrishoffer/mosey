@@ -4,6 +4,17 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Round 2: four substance features (all promoted by Chris).** (1) **Day-by-day
+  flow plan** — new `generate-day-plan` Edge Function (sonnet, generic/no-places, pace+age
+  aware), `trip_days` table, `DayPlanPanel`, a new "Days" tab. (2) **Trip-readiness ring** —
+  `useReadiness` blends packing/timeline/getting-there/home progress; `ReadinessRing` (svg) shows
+  on the trip-detail header and the active shelf card. (3) **Logistics pocket** — `logistics_items`
+  table + CRUD in the new "Prep" tab. (4) **Leaving-home checklist** — `home_tasks` table, seeded
+  with deterministic defaults on trip creation, check-off + custom adds, also in "Prep".
+  Trip-detail segmented control is now horizontally scrollable (5 tabs). Requires migration
+  `0003_days_logistics_home.sql` and a function redeploy (now four functions). tsc clean, 20/20.
+
+
 - **2026-06-29 — Round 1 of device feedback (Chris).** (1) **Family = everyone**: `children`
   table now holds any traveler — added `relation` and made `birth_year` nullable (adults skip
   age); UI relabeled to "your crew"; AI prompts include relation and only state age when known;
