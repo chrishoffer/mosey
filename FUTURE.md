@@ -17,6 +17,15 @@ sources or scope the v1 brief explicitly excludes (§12).
 - **Trip sharing / collaboration** between co-parents.
 - **Web companion app.**
 
+## Deferred from v1 by the human
+
+- **Amazon Associates / Buy on Amazon (2026-06-29).** Pulled from the shipped v1 surface
+  at the human's request ("kill amazon associates for now"). The capability is intact and
+  reversible: `src/lib/amazon.ts` (+ its test) stays, AI still emits `amazon_query` on
+  packing items, and the only UI change to bring it back is rendering a "Buy on Amazon"
+  button in `PackingPanel` when `item.amazon_query` is present, plus setting
+  `EXPO_PUBLIC_AMAZON_ASSOCIATE_TAG`.
+
 ## Why these wait
 
 The hallucination guardrail (CLAUDE.md) forbids naming real places without a real

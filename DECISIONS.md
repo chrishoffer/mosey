@@ -2,6 +2,13 @@
 
 Execution-level choices made autonomously. Newest first. Each: what + why.
 
+## Post-build adjustments
+
+- **2026-06-29 — Amazon Associates removed from v1 surface (human request).** Removed the
+  "Buy on Amazon" button from the packing UI and dropped the associate tag from `.env.example`
+  and the handoff asks. Kept `src/lib/amazon.ts` + test dormant for trivial re-enable; logged
+  in `FUTURE.md`. No data-model change.
+
 ## Phase boundary check-in (after Phases 1–10 landed in one pass)
 
 The full v1 surface is built and green (tsc clean, 14/14 tests). Items I need from the

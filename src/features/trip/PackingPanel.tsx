@@ -10,7 +10,6 @@ import {
   useTravelers,
 } from '../../hooks';
 import { generatePackingList } from '../../lib/ai';
-import { openAmazon } from '../../lib/amazon';
 import { getAccent, palette, radius, spacing } from '../../theme/tokens';
 import type { Child, PackingItem, Trip } from '../../types/db';
 
@@ -169,26 +168,13 @@ function PackRow({
           ) : null}
         </View>
       </Pressable>
-      <View style={styles.itemActions}>
-        {item.amazon_query ? (
-          <Pressable
-            onPress={() => openAmazon(item.amazon_query!)}
-            accessibilityRole="link"
-            accessibilityLabel={`Buy ${item.label} on Amazon`}
-            style={styles.buyBtn}
-          >
-            <Ionicons name="cart-outline" size={15} color={palette.ink} />
-            <Text variant="caption" color={palette.ink}>
-              Buy on Amazon
-            </Text>
-          </Pressable>
-        ) : null}
-        {onDelete ? (
+      {onDelete ? (
+        <View style={styles.itemActions}>
           <Pressable onPress={onDelete} hitSlop={8} accessibilityLabel={`Remove ${item.label}`}>
             <Ionicons name="close" size={18} color={palette.inkSoft} />
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -297,19 +283,7 @@ const styles = StyleSheet.create({
   itemCard: { paddingVertical: spacing.md, gap: spacing.sm },
   itemMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   struck: { textDecorationLine: 'line-through' },
-  itemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.md },
-  buyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: palette.paper,
-    borderColor: palette.line,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    minHeight: 36,
-  },
+  itemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   addCard: { backgroundColor: palette.card, gap: spacing.sm, marginTop: spacing.sm },
   addInput: {
     backgroundColor: palette.paper,

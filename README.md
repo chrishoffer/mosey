@@ -5,8 +5,11 @@
 A family-travel sidekick for parents — iOS app (Expo / React Native + Supabase + Claude).
 This is a robust v1: a parent can sign in, save their kids once, plan multiple trips, get
 an AI packing list and getting-there kit tailored to those kids and that trip, check items
-off, **Buy on Amazon**, follow a timeline of proactive nudges, use a bounded **Ask Mosey**
-assistant, and leave a post-trip note that makes the next trip smarter.
+off, follow a timeline of proactive nudges, use a bounded **Ask Mosey** assistant, and leave
+a post-trip note that makes the next trip smarter.
+
+> Amazon Associates ("Buy on Amazon") is **deferred for v1** — the module is kept dormant and
+> reversible (see `FUTURE.md`).
 
 ## Guardrails (non-negotiable — see [CLAUDE.md](./CLAUDE.md))
 
@@ -23,7 +26,7 @@ assistant, and leave a post-trip note that makes the next trip smarter.
 - **AI:** Anthropic (`claude-sonnet-4-6` generation, `claude-haiku-4-5` reserved for cheap
   calls) — only from Edge Functions.
 - **Subscriptions:** RevenueCat scaffold (stubbed paywall; v1 is free).
-- **Affiliate:** Amazon Associates outbound links (physical goods only).
+- **Affiliate:** Amazon Associates — deferred for v1 (dormant module retained).
 - **Notifications:** Expo local notifications, driven by a deterministic timeline generator.
 
 ## Project layout
