@@ -4,18 +4,20 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Screen, Text } from '../../src/components/ui';
 import { TripCard } from '../../src/components/TripCard';
+import { Logo } from '../../src/components/Logo';
 import { useProfile, useTimeline, useTrips, useTravelers } from '../../src/hooks';
 import { useAuth } from '../../src/lib/auth';
-import { palette, spacing } from '../../src/theme/tokens';
+import { accents, palette, spacing } from '../../src/theme/tokens';
 import type { Trip } from '../../src/types/db';
 
 export default function Shelf() {
   const router = useRouter();
-  const { configured } = useAuth();
+  const { configured, session } = useAuth();
   const { data: profile } = useProfile();
   const trips = useTrips();
 
   const { active, planning, archived } = useMemo(() => groupTrips(trips.data ?? []), [trips.data]);
+  const initial = (profile?.display_name || session?.user?.email || 'Y').trim().charAt(0).toUpperCase();
 
   return (
     <Screen>
@@ -23,15 +25,25 @@ export default function Shelf() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={trips.isRefetching} onRefresh={() => trips.refetch()} />}
       >
-        <View style={styles.header}>
-          <View>
-            <Text variant="overline" color={palette.inkSoft}>
-              {greeting()}
-            </Text>
-            <Text variant="hero">
-              {profile?.display_name ? profile.display_name : 'Your shelf'}
+        <View style={styles.brandBar}>
+          <View style={styles.wordmark}>
+            <Logo size={32} />
+            <Text variant="heading">Mosey</Text>
+          </View>
+          <View style={[styles.avatar, { backgroundColor: accents.marigold.base }]}>
+            <Text variant="bodyStrong" color={accents.marigold.deep}>
+              {initial}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.greetBlock}>
+          <Text variant="hero">
+            Let’s <Text variant="hero" color={palette.coral}>mosey</Text>.
+          </Text>
+          <Text variant="label" style={{ marginTop: 2 }}>
+            {subLine(!!active, planning.length, archived.length, profile?.display_name)}
+          </Text>
         </View>
 
         {!configured && <ConfigNotice />}
@@ -53,7 +65,11 @@ export default function Shelf() {
           <EmptyShelf onNew={() => router.push('/(app)/new-trip')} />
         ) : (
           <>
-            {active && <ActiveTrip trip={active} onPress={() => router.push(`/(app)/trip/${active.id}`)} />}
+            {active && (
+              <Section title="Up next">
+                <ActiveTrip trip={active} onPress={() => router.push(`/(app)/trip/${active.id}`)} />
+              </Section>
+            )}
 
             {planning.length > 0 && (
               <Section title="Planning">
@@ -64,7 +80,7 @@ export default function Shelf() {
             )}
 
             {archived.length > 0 && (
-              <Section title="Memories">
+              <Section title="In the books">
                 {archived.map((t) => (
                   <TripCard key={t.id} trip={t} onPress={() => router.push(`/(app)/trip/${t.id}`)} />
                 ))}
@@ -150,16 +166,26 @@ function groupTrips(trips: Trip[]) {
   return { active, planning, archived };
 }
 
-function greeting(d = new Date()) {
-  const h = d.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+/** Playful one-liner under the greeting, summarizing the shelf (concept: "One on
+ *  the horizon, two in the books."). */
+function subLine(hasActive: boolean, planning: number, archived: number, name?: string | null): string {
+  const horizon = (hasActive ? 1 : 0) + planning;
+  const parts: string[] = [];
+  if (horizon > 0) parts.push(`${horizon} on the horizon`);
+  if (archived > 0) parts.push(`${archived} in the books`);
+  if (parts.length === 0) {
+    return name ? `Ready when you are, ${name}.` : 'Your trips, all in one calm place.';
+  }
+  const s = parts.join(', ');
+  return s.charAt(0).toUpperCase() + s.slice(1) + '.';
 }
 
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.x3 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  brandBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  wordmark: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  greetBlock: { marginTop: -spacing.xs },
   section: { gap: spacing.sm },
   sectionTitle: { marginLeft: spacing.xs },
   empty: { padding: spacing.xl },

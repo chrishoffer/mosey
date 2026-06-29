@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Sparkle } from '../../src/components/Sparkle';
-import { palette, shadow } from '../../src/theme/tokens';
+import { palette } from '../../src/theme/tokens';
 
 export default function AppLayout() {
   return (
@@ -32,9 +32,9 @@ export default function AppLayout() {
         name="ask"
         options={{
           title: 'Ask Mosey',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.sparkleWrap, focused && styles.sparkleActive]}>
-              <Sparkle size={26} color={focused ? palette.white : palette.coral} />
+          tabBarIcon: () => (
+            <View style={styles.sparkleWrap}>
+              <Sparkle size={26} color={palette.white} />
             </View>
           ),
         }}
@@ -57,16 +57,17 @@ export default function AppLayout() {
 
 const styles = StyleSheet.create({
   sparkleWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: palette.paper,
+    width: 54,
+    height: 54,
+    borderRadius: 17,
+    backgroundColor: palette.coral,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -6,
-    ...shadow.soft,
-  },
-  sparkleActive: {
-    backgroundColor: palette.coral,
+    marginTop: -14,
+    shadowColor: palette.coral,
+    shadowOpacity: 0.7,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
   },
 });

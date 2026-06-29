@@ -4,6 +4,16 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Design pass aligned to `mosey-concept-v3.html` (now provided).** The human
+  shared the concept. Applied: exact per-trip tint/deep shades + base→deep gradients and the
+  stronger card lift (`--lift`/`--lift-sm`) into `src/theme/tokens.ts`; added the Mosey brand
+  mark (sea hill + marigold sun) as `src/components/Logo.tsx` and put it on the shelf brand bar
+  + sign-in; the playful **"Let's mosey."** greeting with a dynamic sub-line and concept section
+  labels (Up next / Planning / In the books); and the center tab is now a raised coral sparkle
+  FAB. The concept CSS is committed at `design/mosey-concept-v3.html` as the tracked reference.
+  Per the human's note, treated as guidance, not gospel. tsc clean, 14/14 tests still pass.
+
+
 - **2026-06-29 — Amazon Associates removed from v1 surface (human request).** Removed the
   "Buy on Amazon" button from the packing UI and dropped the associate tag from `.env.example`
   and the handoff asks. Kept `src/lib/amazon.ts` + test dormant for trivial re-enable; logged

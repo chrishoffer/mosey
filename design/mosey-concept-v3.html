@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mosey — concept v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2138; --ink-soft:#6A6F86; --paper:#F6F1EA; --card:#FFFFFF; --line:#EBE4D9;
+    --coral:#F0663F; --coral-tint:#FBE3D9; --coral-deep:#B8431F;
+    --sea:#179B92; --sea-tint:#D6EFEC; --sea-deep:#0C6A63;
+    --marigold:#E9A732; --marigold-tint:#FAEBCD; --marigold-deep:#9C6B12;
+    --grape:#7A6CB8; --grape-tint:#E6E1F2; --grape-deep:#4E4185;
+    --sky:#4C92C9; --sky-tint:#DBEAF4; --sky-deep:#235e8d;
+    --sage:#5E9B7E; --sage-tint:#DCEEE3; --sage-deep:#356d52;
+    --lift:0 18px 40px -16px rgba(27,33,56,.34);
+    --lift-sm:0 10px 24px -12px rgba(27,33,56,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Hanken Grotesk",system-ui,sans-serif;background:radial-gradient(1200px 600px at 15% -10%,#2a3358 0,transparent 60%),radial-gradient(900px 700px at 115% 5%,#3a2b4d 0,transparent 55%),#161d33;color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px;-webkit-font-smoothing:antialiased}
+  .stage{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%}
+  .note{color:#C9D2E8;font-size:13px;text-align:center;max-width:370px;line-height:1.5;opacity:.85}
+  .note b{color:#fff;font-weight:600}
+
+  .phone{width:390px;max-width:100%;height:830px;background:var(--paper);border-radius:46px;padding:12px;box-shadow:0 40px 80px -30px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.04);position:relative}
+  .screen{position:relative;width:100%;height:100%;background:var(--paper);border-radius:36px;overflow:hidden;display:flex;flex-direction:column}
+  .statusbar{height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:700;color:var(--ink)}
+  .sb-right{display:flex;gap:6px}
+  .view{flex:1 1 auto;overflow-y:auto}
+  .view::-webkit-scrollbar{width:0}
+  .pad{padding:0 18px 26px}
+
+  .brand{display:flex;align-items:center;justify-content:space-between;padding:4px 20px 2px}
+  .wm{display:flex;align-items:center;gap:9px}
+  .logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(150deg,var(--sea),#0C6A63);display:grid;place-items:center}
+  .wm b{font-family:"Bricolage Grotesque";font-weight:800;font-size:23px;letter-spacing:-.03em}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--marigold);display:grid;place-items:center;font-weight:800;font-size:14px;color:#3a2806}
+
+  .greet{font-family:"Bricolage Grotesque";font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1.02;margin:10px 4px 3px}
+  .greet .em{color:var(--coral)}
+  .sub{font-size:14px;color:var(--ink-soft);margin:0 4px 2px;font-weight:500}
+
+  .seclbl{font-family:"Bricolage Grotesque";font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin:24px 6px 0;display:flex;justify-content:space-between;align-items:center}
+
+  /* ACTIVE TRIP — big floating color card */
+  .active{position:relative;margin:14px 2px 2px;border-radius:28px;overflow:hidden;box-shadow:var(--lift);background:linear-gradient(155deg,var(--sea),#13837b 70%,#0C6A63)}
+  .active .map{position:absolute;inset:0;opacity:.18;background-image:radial-gradient(circle, #fff 1px, transparent 1.4px);background-size:15px 15px;-webkit-mask-image:radial-gradient(120% 90% at 70% 10%,#000,transparent 75%)}
+  .active .body{position:relative;padding:20px 20px 18px;color:#fff}
+  .row{display:flex;align-items:center;gap:8px}
+  .pill{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:8px;background:rgba(255,255,255,.18);color:#fff}
+  .pill.hot{background:#fff;color:var(--sea-deep)}
+  .active h2{font-family:"Bricolage Grotesque";font-weight:800;font-size:30px;line-height:1;margin:13px 0 4px;letter-spacing:-.02em}
+  .active .dest{font-size:13.5px;color:rgba(255,255,255,.82);font-weight:500}
+  .meta{display:flex;align-items:flex-end;justify-content:space-between;margin-top:18px}
+  .cd{display:flex;align-items:flex-end;gap:9px}
+  .cd b{font-family:"Bricolage Grotesque";font-weight:800;font-size:38px;line-height:.82}
+  .cd span{font-size:12px;color:rgba(255,255,255,.78);padding-bottom:4px;font-weight:600}
+  .faces{display:flex}
+  .face{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#2a1d05;border:2.5px solid #13837b;margin-left:-8px}
+  .nudge{position:relative;margin:14px;margin-top:0;background:rgba(255,255,255,.94);border-radius:18px;padding:13px 14px;display:flex;align-items:center;gap:11px;box-shadow:0 10px 22px -12px rgba(0,0,0,.5)}
+  .nudge .ic{width:34px;height:34px;border-radius:10px;background:var(--coral);display:grid;place-items:center;flex:0 0 34px}
+  .nudge .tx{flex:1}
+  .nudge .tx .k{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--coral)}
+  .nudge .tx .b{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:2px}
+  .nudge .go{color:var(--ink-soft)}
+
+  /* PAST TRIP color cards */
+  .trip{margin-top:13px;border-radius:24px;padding:16px 17px;position:relative;overflow:hidden;box-shadow:var(--lift-sm)}
+  .trip.sky{background:var(--sky-tint)} .trip.sky .nm,.trip.sky .ic2{color:var(--sky-deep)}
+  .trip.sage{background:var(--sage-tint)} .trip.sage .nm,.trip.sage .ic2{color:var(--sage-deep)}
+  .trip.grape{background:var(--grape-tint)} .trip.grape .nm,.trip.grape .ic2{color:var(--grape-deep)}
+  .trip .iconrow{display:flex;gap:7px;margin-bottom:24px}
+  .trip .ic2{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.6);display:grid;place-items:center}
+  .trip .dt{font-size:12px;font-weight:600;color:var(--ink-soft)}
+  .trip .nm{font-family:"Bricolage Grotesque";font-weight:800;font-size:23px;letter-spacing:-.02em;margin-top:1px}
+  .trip .mem{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+  .trip .mem span{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:8px;background:rgba(255,255,255,.7)}
+  .hit{color:var(--sage-deep)} .miss{color:var(--coral-deep)}
+
+  .actions{display:flex;gap:10px;margin:20px 2px 4px}
+  .actions button{flex:1;border:none;font-family:inherit;font-weight:700;font-size:14.5px;padding:15px;border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .primary{background:var(--ink);color:#fff;box-shadow:var(--lift-sm)}
+  .ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--line)!important}
+  .ghost .spark{color:var(--coral)}
+  .actions button:active{transform:translateY(1px)}
+
+  /* ASK sheet */
+  .scrim{position:absolute;inset:0;background:rgba(20,25,45,.45);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .scrim.show{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:28px 28px 0 0;padding:10px 18px 26px;transform:translateY(100%);transition:.3s cubic-bezier(.3,.8,.3,1);z-index:51;box-shadow:0 -20px 50px -20px rgba(0,0,0,.5)}
+  .sheet.show{transform:translateY(0)}
+  .grip{width:40px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 14px}
+  .sheet h3{font-family:"Bricolage Grotesque";font-weight:800;font-size:22px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .sheet h3 .s{width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,var(--coral),#d84e26);display:grid;place-items:center}
+  .sheet p{font-size:13.5px;color:var(--ink-soft);margin:6px 0 14px;line-height:1.45}
+  .qa{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:14px;font-weight:600;color:var(--ink);margin-bottom:9px;display:flex;align-items:center;gap:11px;cursor:pointer;box-shadow:var(--lift-sm)}
+  .qa .e{font-size:18px}
+  .askbar{display:flex;gap:9px;margin-top:6px}
+  .askbar input{flex:1;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;font-family:inherit;font-size:14px}
+  .askbar .send{width:48px;border-radius:14px;border:none;background:var(--coral);display:grid;place-items:center;cursor:pointer}
+
+  /* PACKING */
+  .head h2{font-family:"Bricolage Grotesque";font-weight:800;font-size:28px;letter-spacing:-.02em;margin:6px 4px 0}
+  .head p{color:var(--ink-soft);font-size:14px;margin:4px 4px 0;line-height:1.45;font-weight:500}
+  .memory{margin:16px 2px 4px;background:var(--marigold-tint);border-radius:18px;padding:14px 15px;display:flex;gap:12px;box-shadow:var(--lift-sm)}
+  .memory .mi{width:34px;height:34px;border-radius:10px;background:#fff;display:grid;place-items:center;flex:0 0 34px}
+  .memory .mtxt{font-size:13.5px;line-height:1.45;color:var(--marigold-deep);font-weight:600}
+  .memory .mtxt b{font-weight:800}
+  .ktabs{display:flex;gap:8px;margin:16px 2px 4px;overflow-x:auto}
+  .ktabs::-webkit-scrollbar{height:0}
+  .kt{flex:0 0 auto;display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px 7px 7px;font-size:13.5px;font-weight:700;color:var(--ink-soft);cursor:pointer}
+  .kt.on{border-color:var(--ink);color:var(--ink)}
+  .kt .d{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:800;color:#2a1d05}
+  .catlbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:20px 4px 0}
+  .items{margin-top:10px;display:flex;flex-direction:column;gap:9px}
+  .it{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:15px;padding:14px;cursor:pointer;box-shadow:var(--lift-sm)}
+  .ck{width:23px;height:23px;border-radius:8px;border:2px solid var(--line);flex:0 0 23px;display:grid;place-items:center;transition:.15s}
+  .it.on .ck{background:var(--sea);border-color:var(--sea)}
+  .it.on .ck svg{opacity:1}.ck svg{opacity:0;transition:.15s}
+  .it .lb{flex:1;font-size:14.5px;font-weight:600}
+  .it.on .lb{color:var(--ink-soft);text-decoration:line-through}
+  .tag{font-size:11px;font-weight:700;color:var(--marigold-deep);background:var(--marigold-tint);padding:4px 8px;border-radius:7px;white-space:nowrap}
+
+  .tabbar{flex:0 0 78px;display:flex;align-items:center;background:rgba(246,241,234,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 6px 18px}
+  .tab{flex:1;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--ink-soft);font-family:inherit}
+  .tab.on{color:var(--coral)}
+  .tab span{font-size:11px;font-weight:700}
+  .tab.fab{flex:0 0 auto}
+  .fabbtn{width:54px;height:54px;border-radius:17px;background:linear-gradient(150deg,var(--coral),#d84e26);display:grid;place-items:center;box-shadow:0 12px 24px -8px rgba(240,102,63,.7);margin-top:-14px}
+
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="note">Design source of truth for Mosey v1. Color-blocked trip cards, the floating-card
+  lift, heavier Bricolage display type, and the Ask Mosey sparkle (✦). The app's
+  src/theme tokens are derived from the CSS variables above. (Provided by the human;
+  treated as guidance, not gospel.)</div>
+</div>
+</body>
+</html>

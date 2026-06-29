@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Screen, Text } from '../../src/components/ui';
-import { Sparkle } from '../../src/components/Sparkle';
+import { Logo } from '../../src/components/Logo';
 import { useAuth } from '../../src/lib/auth';
 import { palette, radius, spacing } from '../../src/theme/tokens';
 
@@ -40,7 +40,7 @@ export default function SignIn() {
       >
         <View style={styles.container}>
           <View style={styles.brand}>
-            <Sparkle size={40} />
+            <Logo size={56} />
             <Text variant="hero" style={styles.title}>
               Mosey
             </Text>
