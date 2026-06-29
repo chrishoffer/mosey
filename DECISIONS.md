@@ -4,6 +4,14 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Bolder design pass (Chris: "go more bold").** Each trip now *wears its color*:
+  trip-detail gets a rich gradient header (white text) + an accent-tinted screen background
+  (was gray-on-white); the new-trip flow is tinted with the trip's auto color. Shelf planning
+  cards are now **solid color blocks** with onAccent text (the Trip Way color-blocked look he
+  liked) instead of pale tints; active stays a gradient hero, archived stays a soft tint so
+  memories read calmer. tsc clean, 24/24.
+
+
 - **2026-06-29 — Round 4 device feedback.** (1) **Tabs all visible** — trip-detail segmented
   control now wraps to rows (flexWrap) instead of a horizontal scroll that hid Prep. (2)
   **Contrast** — form inputs on the paper background (new-trip, DateField) are now white with a

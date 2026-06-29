@@ -32,10 +32,15 @@ export function TripCard({ trip, travelerNames = [], liveNudge, readiness, onPre
         : `${travelerNames.slice(0, 2).join(' · ')} +${travelerNames.length - 2}`
       : 'Just you';
 
+  // Active = gradient (white text). Planning = bold solid color block (onAccent
+  // text). Archived = soft tint (deep text) — memories read calmer.
+  const onColor = isActive ? palette.white : isArchived ? accent.deep : accent.onAccent;
+  const subOpacity = isArchived ? 1 : 0.88;
+
   const body = (
     <>
       <View style={styles.topRow}>
-        <Text variant="overline" color={isActive ? 'rgba(255,255,255,0.85)' : accent.deep}>
+        <Text variant="overline" color={onColor} style={{ opacity: subOpacity }}>
           {trip.trip_type.replace('_', ' ')}
         </Text>
         {isActive && (
@@ -48,17 +53,13 @@ export function TripCard({ trip, travelerNames = [], liveNudge, readiness, onPre
         )}
       </View>
 
-      <Text variant="title" color={isActive ? palette.white : accent.deep} style={styles.name}>
+      <Text variant="title" color={onColor} style={styles.name}>
         {trip.name}
       </Text>
-      <Text
-        variant="label"
-        color={isActive ? 'rgba(255,255,255,0.9)' : accent.deep}
-        style={{ opacity: isActive ? 1 : 0.8 }}
-      >
+      <Text variant="label" color={onColor} style={{ opacity: subOpacity }}>
         {trip.destination} · {fmtDateRange(trip.start_date, trip.end_date)}
       </Text>
-      <Text variant="caption" color={isActive ? 'rgba(255,255,255,0.85)' : accent.deep} style={styles.who}>
+      <Text variant="caption" color={onColor} style={[styles.who, { opacity: subOpacity }]}>
         {who}
       </Text>
 
@@ -120,7 +121,7 @@ export function TripCard({ trip, travelerNames = [], liveNudge, readiness, onPre
         <View
           style={[
             styles.card,
-            { backgroundColor: isArchived ? accent.tintSoft : accent.tint },
+            { backgroundColor: isArchived ? accent.tint : accent.base },
             isArchived ? shadow.none : shadow.soft,
           ]}
         >

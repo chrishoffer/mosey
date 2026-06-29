@@ -103,7 +103,7 @@ export default function NewTrip() {
   const accentColor = getAccent(accent);
 
   return (
-    <Screen edges={['top']}>
+    <Screen edges={['top']} style={{ backgroundColor: accentColor.tintSoft }}>
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Close">
           <Ionicons name="close" size={26} color={palette.ink} />

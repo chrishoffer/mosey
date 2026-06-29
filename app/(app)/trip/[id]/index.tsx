@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Screen, Text } from '../../../../src/components/ui';
@@ -19,7 +20,7 @@ import {
   useTrip,
   useUpdateTrip,
 } from '../../../../src/hooks';
-import { getAccent, palette, radius, spacing } from '../../../../src/theme/tokens';
+import { getAccent, palette, radius, shadow, spacing } from '../../../../src/theme/tokens';
 import { fmtDateRange } from '../../../../src/lib/dates';
 import type { TripStatus } from '../../../../src/types/db';
 
@@ -76,14 +77,14 @@ export default function TripDetail() {
   }
 
   return (
-    <Screen>
-      <View style={[styles.header, { borderBottomColor: palette.line }]}>
+    <Screen style={{ backgroundColor: accent.tintSoft }}>
+      <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
         <Pressable
           onPress={() => router.push({ pathname: '/(app)/ask', params: { trip: t.id } })}
           accessibilityRole="button"
           accessibilityLabel="Ask Mosey about this trip"
-          style={[styles.sparkleBtn, { borderColor: accent.base }]}
+          style={[styles.sparkleBtn, { backgroundColor: palette.card, borderColor: accent.base }]}
           hitSlop={8}
         >
           <Sparkle size={20} color={accent.base} />
@@ -94,14 +95,19 @@ export default function TripDetail() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.titleBlock, { backgroundColor: accent.tint }]}>
-          <Text variant="overline" color={accent.deep}>
+        <LinearGradient
+          colors={accent.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.titleBlock, shadow.hero]}
+        >
+          <Text variant="overline" color="rgba(255,255,255,0.85)">
             {t.trip_type.replace('_', ' ')} · {t.pace}
           </Text>
-          <Text variant="hero" color={accent.deep}>
+          <Text variant="hero" color={palette.white}>
             {t.name}
           </Text>
-          <Text variant="label" color={accent.deep}>
+          <Text variant="label" color="rgba(255,255,255,0.92)">
             {t.destination} · {fmtDateRange(t.start_date, t.end_date)}
           </Text>
           {t.hard_nos ? (
@@ -112,7 +118,7 @@ export default function TripDetail() {
               </Text>
             </View>
           ) : null}
-        </View>
+        </LinearGradient>
 
         <Card lift="none" style={styles.crewCard}>
           <View style={styles.crewHead}>
@@ -277,7 +283,7 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.x3 },
-  titleBlock: { gap: spacing.xs, padding: spacing.lg, borderRadius: radius.lg },
+  titleBlock: { gap: spacing.xs, padding: spacing.xl, borderRadius: radius.xl },
   hardNos: {
     flexDirection: 'row',
     alignItems: 'center',
