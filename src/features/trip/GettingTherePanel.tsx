@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Text } from '../../components/ui';
 import { useDeleteTransitItem, useSetTransitDone, useTransit, useTravelers } from '../../hooks';
 import { generateTransitKit } from '../../lib/ai';
+import { SharpenCard } from '../../components/TripQuestions';
 import { getAccent, palette, spacing } from '../../theme/tokens';
 import { TRANSIT_LABELS, type Child, type TransitItem, type TransitKind, type Trip } from '../../types/db';
 
@@ -57,6 +58,9 @@ export function GettingTherePanel({ trip }: { trip: Trip }) {
             Carry-on lists per person, a download checklist, screen-light activities, and playlists —
             sized to {TRANSIT_LABELS[trip.transit_mode].toLowerCase()} and your crew.
           </Text>
+          <View style={{ marginTop: spacing.lg }}>
+            <SharpenCard trip={trip} accent={accent.base} deep={accent.deep} />
+          </View>
           <Button
             label={generating ? 'Building your kit…' : 'Generate transit kit'}
             onPress={generate}

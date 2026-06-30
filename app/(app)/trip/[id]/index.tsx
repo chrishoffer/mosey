@@ -12,6 +12,7 @@ import { DayPlanPanel } from '../../../../src/features/trip/DayPlanPanel';
 import { PrepPanel } from '../../../../src/features/trip/PrepPanel';
 import { ReadinessRing } from '../../../../src/components/ReadinessRing';
 import { CrewPicker } from '../../../../src/components/CrewPicker';
+import { SharpenCard, tripHasGaps } from '../../../../src/components/TripQuestions';
 import {
   useAddTraveler,
   useReadiness,
@@ -44,6 +45,7 @@ export default function TripDetail() {
   const removeTraveler = useRemoveTraveler(id);
   const [tab, setTab] = useState<Tab>('timeline');
   const [editCrew, setEditCrew] = useState(false);
+  const [dismissNurture, setDismissNurture] = useState(false);
 
   const travelerIds = (travelers.data ?? []).map((c) => c.id);
   function toggleTraveler(childId: string) {
@@ -150,6 +152,26 @@ export default function TripDetail() {
             </View>
           )}
         </Card>
+
+        {tripHasGaps(t) && !dismissNurture && (
+          <Card lift="soft" style={[styles.nurtureCard, { backgroundColor: accent.tint }]}>
+            <View style={styles.nurtureHead}>
+              <View style={styles.crewTitle}>
+                <Ionicons name="sparkles" size={16} color={accent.deep} />
+                <Text variant="bodyStrong" color={accent.deep}>
+                  Help Mosey tailor this trip
+                </Text>
+              </View>
+              <Pressable onPress={() => setDismissNurture(true)} hitSlop={8} accessibilityLabel="Dismiss">
+                <Ionicons name="close" size={18} color={accent.deep} />
+              </Pressable>
+            </View>
+            <Text variant="caption" color={accent.deep}>
+              A few optional details make the lists and day plan noticeably sharper.
+            </Text>
+            <SharpenCard trip={t} accent={accent.base} deep={accent.deep} defaultOpen title="Answer a few quick things" />
+          </Card>
+        )}
 
         {readiness.total > 0 && (
           <Card lift="soft" style={styles.readyCard}>
@@ -301,6 +323,8 @@ const styles = StyleSheet.create({
   crewTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   crewChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   crewChip: { borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 6 },
+  nurtureCard: { gap: spacing.sm },
+  nurtureHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   segmented: {
     flexDirection: 'row',
     flexWrap: 'wrap',

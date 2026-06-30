@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Text } from '../../components/ui';
 import { useDays } from '../../hooks';
 import { generateDayPlan } from '../../lib/ai';
+import { SharpenCard } from '../../components/TripQuestions';
 import { fmtDate } from '../../lib/dates';
 import { getAccent, palette, spacing } from '../../theme/tokens';
 import type { Trip, TripDay } from '../../types/db';
@@ -48,6 +49,9 @@ export function DayPlanPanel({ trip }: { trip: Trip }) {
             ages (nap windows included). It’s general guidance, not a rigid schedule, and it never
             invents specific places.
           </Text>
+          <View style={{ marginTop: spacing.lg }}>
+            <SharpenCard trip={trip} accent={accent.base} deep={accent.deep} />
+          </View>
           <Button
             label={generating ? 'Sketching your days…' : 'Plan my days'}
             onPress={generate}

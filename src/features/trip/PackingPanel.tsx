@@ -10,6 +10,7 @@ import {
   useTravelers,
 } from '../../hooks';
 import { generatePackingList } from '../../lib/ai';
+import { SharpenCard } from '../../components/TripQuestions';
 import { getAccent, palette, radius, spacing } from '../../theme/tokens';
 import type { Child, PackingItem, Trip } from '../../types/db';
 
@@ -60,6 +61,9 @@ export function PackingPanel({ trip }: { trip: Trip }) {
             Mosey will build a per-kid and shared list tailored to {trip.destination}, your dates, and
             each child’s ages and notes.
           </Text>
+          <View style={{ marginTop: spacing.lg }}>
+            <SharpenCard trip={trip} accent={accent.base} deep={accent.deep} />
+          </View>
           <Button
             label={generating ? 'Thinking…' : 'Generate packing list'}
             onPress={generate}

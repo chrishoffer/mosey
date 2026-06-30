@@ -4,6 +4,17 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Contextual questions, not a longer setup (Chris's clarification).** Pulled the
+  lodging/activities/extra_notes questions back OUT of initial trip setup (keeps it ~6–8 taps).
+  Instead, a reusable `TripQuestions`/`SharpenCard` (auto-saves each answer to the trip) surfaces
+  them where they help: a collapsible "Add a few details to sharpen this" above every Generate
+  button (packing, day plan, getting-there), and a dismissible "Help Mosey tailor this trip"
+  nurture card on the trip detail that persists while context is still missing (`tripHasGaps`).
+  The DB columns + prompt wiring from the previous commit are unchanged, so the steps are still
+  migration 0005 + redeploy. (True time-scheduled drip prompts are a possible later enhancement.)
+  tsc clean, 24/24.
+
+
 - **2026-06-29 — Ask Mosey takes actions + smarter questions.** (1) **Action-taking assistant:**
   `ask-mosey` rewritten so the model can emit validated actions — `add_reminder` (timeline nudge,
   lead_days→notify_at), `add_packing`, `add_transit`, `add_home_task`, `add_logistics`. Server
