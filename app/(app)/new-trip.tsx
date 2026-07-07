@@ -9,6 +9,7 @@ import { CrewPicker } from '../../src/components/CrewPicker';
 import { useChildren, useCreateTrip, useTrips } from '../../src/hooks';
 import { fetchTimeline } from '../../src/data/api';
 import { scheduleTimelineNotifications } from '../../src/lib/notifications';
+import { scheduleNurturePrompts } from '../../src/lib/nurture';
 import { accentList, getAccent, palette, radius, spacing } from '../../src/theme/tokens';
 import {
   ageFromBirthYear,
@@ -94,9 +95,11 @@ export default function NewTrip() {
         childIds,
         hasKids,
       });
-      // Schedule local notifications for the freshly-seeded timeline (best-effort).
+      // Schedule local notifications for the freshly-seeded timeline, plus the
+      // gentle "tell Mosey more" drip between now and departure (best-effort).
       const events = await fetchTimeline(trip.id);
       await scheduleTimelineNotifications(trip.name, events);
+      await scheduleNurturePrompts(trip);
       router.replace(`/(app)/trip/${trip.id}`);
     } catch (e) {
       Alert.alert('Could not create trip', e instanceof Error ? e.message : 'Please try again.');

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,7 +46,18 @@ export default function TripDetail() {
   const removeTraveler = useRemoveTraveler(id);
   const [tab, setTab] = useState<Tab>('timeline');
   const [editCrew, setEditCrew] = useState(false);
-  const [dismissNurture, setDismissNurture] = useState(false);
+
+  // Nurture-card dismissal is sticky per trip (a mis-tap shouldn't nag forever,
+  // and an intentional dismiss should be respected across sessions).
+  const [dismissNurture, setDismissNurture] = useState(true);
+  useEffect(() => {
+    if (!id) return;
+    AsyncStorage.getItem(`mosey.nurtureDismissed.${id}`).then((v) => setDismissNurture(v === '1'));
+  }, [id]);
+  function dismissNurtureCard() {
+    setDismissNurture(true);
+    if (id) AsyncStorage.setItem(`mosey.nurtureDismissed.${id}`, '1');
+  }
 
   const travelerIds = (travelers.data ?? []).map((c) => c.id);
   function toggleTraveler(childId: string) {
@@ -162,7 +174,7 @@ export default function TripDetail() {
                   Help Mosey tailor this trip
                 </Text>
               </View>
-              <Pressable onPress={() => setDismissNurture(true)} hitSlop={8} accessibilityLabel="Dismiss">
+              <Pressable onPress={dismissNurtureCard} hitSlop={8} accessibilityLabel="Dismiss">
                 <Ionicons name="close" size={18} color={accent.deep} />
               </Pressable>
             </View>

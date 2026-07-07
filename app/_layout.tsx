@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
@@ -23,6 +24,18 @@ function AuthGate() {
   const { session, loading, configured } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Tapping any Mosey notification (timeline nudge or nurture prompt) deep-links
+  // straight into its trip.
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { tripId?: string } | undefined;
+      if (data?.tripId && typeof data.tripId === 'string') {
+        router.push(`/(app)/trip/${data.tripId}`);
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
 
   useEffect(() => {
     if (loading) return;

@@ -42,8 +42,10 @@ export async function getUserId(req: Request): Promise<string | null> {
 }
 
 /**
- * Verify the caller owns the trip and return the trip row (admin-scoped).
- * Returns null if the trip does not exist or does not belong to the user.
+ * Verify the caller may act on the trip and return the trip row (admin-scoped).
+ * Mirrors the database's can_access() rule: the caller either OWNS the trip's
+ * account, or is an ACTIVE member of it (whole-account sharing, migration 0004).
+ * Returns null if the trip does not exist or the caller has no access.
  */
 export async function getOwnedTrip(
   admin: SupabaseClient,
@@ -54,8 +56,22 @@ export async function getOwnedTrip(
     .from("trips")
     .select("*")
     .eq("id", tripId)
-    .eq("profile_id", userId)
     .maybeSingle();
   if (error || !data) return null;
-  return data as Record<string, unknown>;
+
+  const ownerId = (data as { profile_id?: string }).profile_id;
+  if (!ownerId) return null;
+  if (ownerId === userId) return data as Record<string, unknown>;
+
+  // Shared account: allow an active member of the owner's account.
+  const { data: membership } = await admin
+    .from("account_members")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("member_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (membership) return data as Record<string, unknown>;
+
+  return null;
 }

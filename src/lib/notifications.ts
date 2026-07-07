@@ -50,6 +50,7 @@ export async function scheduleTimelineNotifications(
         content: {
           title: `${tripName}: ${ev.title}`,
           body: ev.body ?? '',
+          data: { tripId: ev.trip_id }, // tapping the nudge deep-links into the trip
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(when) },
       });

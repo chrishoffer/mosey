@@ -4,6 +4,22 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-06-29 — Nurture drip + done-gate review fixes.** (1) **Drip prompts** (`src/lib/nurture.ts`):
+  up to three scheduled local notifications per trip (~2 days after creation, 21 days out, 10 days
+  out — only slots that land before departure) asking the sharpen questions; auto-cancelled the
+  moment the trip has no gaps; capped at three by design — calm, not naggy. (2) **Notification
+  deep-links**: tapping any Mosey notification (timeline nudge or drip) opens its trip. (3) Ran the
+  **Customer + Skeptic** done-gate agents. Skeptic findings fixed: `getOwnedTrip` now mirrors
+  `can_access` so a shared co-parent can use the AI functions (was silently rejected — needs a
+  function redeploy); nurture-card dismissal is now sticky per trip (AsyncStorage); `FUTURE.md`
+  updated to record that sharing AND Ask-Mosey action-taking were human-promoted (Chris asked for
+  both verbatim in chat). Skeptic's remaining condition surfaced to Chris: **email confirmation
+  must be re-enabled in Supabase Auth before sharing is used with real invitees** (it was disabled
+  for testing; with it off, someone could sign up under an invitee's address and claim their
+  invite). Customer findings logged to IDEAS.md (cruise-native transit kit, new-trip draft save,
+  kid-notes freshness check, non-kid traveler weighting). tsc clean, 24/24.
+
+
 - **2026-06-29 — Contextual questions, not a longer setup (Chris's clarification).** Pulled the
   lodging/activities/extra_notes questions back OUT of initial trip setup (keeps it ~6–8 taps).
   Instead, a reusable `TripQuestions`/`SharpenCard` (auto-saves each answer to the trip) surfaces

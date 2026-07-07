@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './ui';
 import { useUpdateTrip } from '../hooks';
+import { cancelNurturePrompts } from '../lib/nurture';
 import { palette, radius, spacing } from '../theme/tokens';
 import { ACTIVITY_OPTIONS, LODGING_OPTIONS, type Trip } from '../types/db';
 
@@ -59,6 +60,10 @@ export function TripQuestions({ trip, accent, deep }: { trip: Trip; accent: stri
 
   function save(patch: Partial<Trip>) {
     update.mutate({ id: trip.id, patch });
+    // Once every question is answered, the remaining scheduled "tell Mosey more"
+    // drip prompts have nothing left to ask — cancel them quietly.
+    const merged = { ...trip, lodging, activities, extra_notes: notes.trim() || null, ...patch };
+    if (!tripHasGaps(merged as Trip)) cancelNurturePrompts(trip.id);
   }
 
   function pickLodging(l: string) {

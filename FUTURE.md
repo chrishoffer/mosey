@@ -17,6 +17,15 @@ sources or scope the v1 brief explicitly excludes (§12).
 - **Trip sharing / collaboration** between co-parents.
 - **Web companion app.**
 
+## Promoted OUT of this file by the human
+
+- **Whole-account trip sharing (2026-06-29).** Chris chose whole-account + full-edit ("1b, 2a")
+  in chat; built as migration 0004 + AccountProvider. No longer out of scope.
+- **Ask Mosey action-taking (2026-06-29).** Chris asked verbatim: "is there a way when someone
+  asks a question in the mosey chat … it actually adds things to the plan?" — explicit human
+  promotion. Built with server-validated actions only (no free-form writes). Place
+  recommendations remain OUT (still needs a real data source).
+
 ## Deferred from v1 by the human
 
 - **Amazon Associates / Buy on Amazon (2026-06-29).** Pulled from the shipped v1 surface
