@@ -8,7 +8,7 @@ import { stays, type Stay } from '../../src/mock/data';
 import { usePlanFlow } from '../../src/store/planFlow';
 import { useTrips } from '../../src/store/trips';
 import { useEntitlements } from '../../src/store/entitlements';
-import { canCreateAnotherTrip } from '../../src/config/plans';
+import { canCreateAnotherTrip, countBillableTrips } from '../../src/config/plans';
 
 /* Plan step 3 — stays ranked by Kid-fit, each with a "why Mosey picked it" line.
    Mockup: design/v2-mockups/Results.dc.html. */
@@ -52,7 +52,7 @@ export default function StaysScreen() {
       router.push(`/trip/${already.id}`);
       return;
     }
-    if (!canCreateAnotherTrip(plan, trips.length)) {
+    if (!canCreateAnotherTrip(plan, countBillableTrips(trips))) {
       router.push('/paywall');
       return;
     }

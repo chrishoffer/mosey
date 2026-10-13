@@ -6,7 +6,7 @@ import { Button, Card, InkHeader, Screen, SectionLabel, T, Wordmark } from '../s
 import { useSession } from '../src/store/session';
 import { useTrips } from '../src/store/trips';
 import { useEntitlements } from '../src/store/entitlements';
-import { canCreateAnotherTrip, FREE_TRIP_LIMIT, PLANS } from '../src/config/plans';
+import { canCreateAnotherTrip, countBillableTrips, FREE_TRIP_LIMIT, PLANS } from '../src/config/plans';
 import { kidsLine } from '../src/mock/data';
 import { colors, fonts, radius, spacing } from '../src/theme/tokens';
 
@@ -20,7 +20,7 @@ export default function HomeScreen() {
   const planName = PLANS.find((p) => p.id === plan)?.name ?? 'Free';
 
   function startNewTrip() {
-    if (!canCreateAnotherTrip(plan, trips.length)) {
+    if (!canCreateAnotherTrip(plan, countBillableTrips(trips))) {
       router.push('/paywall');
       return;
     }
@@ -87,7 +87,7 @@ export default function HomeScreen() {
               </Card>
             </Pressable>
           ))}
-          {plan === 'free' && trips.length >= FREE_TRIP_LIMIT && (
+          {plan === 'free' && countBillableTrips(trips) >= FREE_TRIP_LIMIT && (
             <Pressable onPress={() => router.push('/paywall')} accessibilityRole="button">
               <Card style={styles.upsell}>
                 <Ionicons name="lock-closed" size={16} color={colors.muted} />

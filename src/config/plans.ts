@@ -60,11 +60,19 @@ export const PLANS: Plan[] = [
 /** Feature gates, by plan. Trip Pass unlocks family features for its one trip. */
 export const FREE_TRIP_LIMIT = 1;
 
+/** The bundled Gatlinburg sample is a demo, not the user's trip — it never
+ *  counts against the free limit, so a free family still gets one REAL trip. */
+export const SAMPLE_TRIP_ID = '1';
+
+export function countBillableTrips(trips: { id: string }[]): number {
+  return trips.filter((t) => t.id !== SAMPLE_TRIP_ID).length;
+}
+
 export function canUseAgent(plan: PlanId): boolean {
   return plan === 'family' || plan === 'trip_pass';
 }
 
-export function canCreateAnotherTrip(plan: PlanId, currentTripCount: number): boolean {
+export function canCreateAnotherTrip(plan: PlanId, billableTripCount: number): boolean {
   if (plan === 'family') return true;
-  return currentTripCount < FREE_TRIP_LIMIT;
+  return billableTripCount < FREE_TRIP_LIMIT;
 }

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Keyboard, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, T } from '../../src/components/ui';
 import { colors, fonts, MIN_TOUCH, radius, spacing } from '../../src/theme/tokens';
 import { usePlanFlow } from '../../src/store/planFlow';
 import { useSession } from '../../src/store/session';
+import { searchPlaces, type PlaceSuggestion } from '../../src/lib/places';
 
 /* Plan step 1 — where / when / who. Mockup: design/v2-mockups/Main.dc.html.
    Mock-only display constants live here (never in src/mock or src/theme). */
@@ -36,6 +37,35 @@ export default function SearchScreen() {
   const crewName = useSession((s) => s.name) || 'crew';
   const { destination, dates, kidAges, adults, pace, protectNap, bedtime, maxDriveMin, set } =
     usePlanFlow();
+
+  // Live place suggestions (real locations via Open-Meteo geocoding; debounced).
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const pickedRef = useRef<string | null>(null);
+
+  function onDestinationChange(v: string) {
+    set({ destination: v, destinationLat: null, destinationLng: null });
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (v.trim().length < 2 || v === pickedRef.current) {
+      setSuggestions([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      const res = await searchPlaces(v, ctrl.signal);
+      if (!ctrl.signal.aborted) setSuggestions(res);
+    }, 300);
+  }
+
+  function pickPlace(s: PlaceSuggestion) {
+    pickedRef.current = s.label;
+    set({ destination: s.label, destinationLat: s.lat, destinationLng: s.lng });
+    setSuggestions([]);
+    Keyboard.dismiss();
+  }
   const [tripType, setTripType] = useState<string | null>(null);
 
   // Seed the flow once with the mockup's sample search, so every screen
@@ -101,7 +131,7 @@ export default function SearchScreen() {
               <T style={styles.fieldLabel}>Where</T>
               <TextInput
                 value={destination}
-                onChangeText={(v) => set({ destination: v })}
+                onChangeText={onDestinationChange}
                 placeholder="Somewhere kid-friendly"
                 placeholderTextColor={colors.faint}
                 style={styles.fieldInput}
@@ -109,6 +139,27 @@ export default function SearchScreen() {
               />
             </View>
           </View>
+          {suggestions.length > 0 && (
+            <View style={styles.suggestBox}>
+              {suggestions.map((s) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => pickPlace(s)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Use ${s.label}`}
+                  style={({ pressed }) => [styles.suggestRow, pressed && { backgroundColor: colors.ground }]}
+                >
+                  <Ionicons name="location" size={16} color={colors.teal} />
+                  <View style={{ flex: 1 }}>
+                    <T variant="bodySemi">{s.name}</T>
+                    <T variant="caption" numberOfLines={1}>
+                      {s.label}
+                    </T>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          )}
           <View style={[styles.fieldRow, styles.fieldDivider]}>
             <Ionicons name="calendar-outline" size={22} color={colors.teal} />
             <View style={{ flex: 1, gap: 2 }}>
@@ -342,6 +393,15 @@ const styles = StyleSheet.create({
   },
   fieldRowInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   fieldDivider: { borderBottomWidth: 1, borderBottomColor: colors.line },
+  suggestBox: { borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.card },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: MIN_TOUCH,
+  },
   fieldLabel: {
     fontFamily: fonts.bodySemi,
     fontSize: 12,
