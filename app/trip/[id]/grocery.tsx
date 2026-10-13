@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card, Screen, T, TipStrip } from '../../../src/components/ui';
@@ -15,7 +17,8 @@ import { colors, fonts, MIN_TOUCH, radius, spacing } from '../../../src/theme/to
 
 /* Grocery run — the first-day shop for a stay with a kitchen. Mosey seeds the
    basics from the crew (3 kids) and the plans (pancake Saturday, 4+ hr drive);
-   parents check things off and add their own. All state is local (useState)
+   parents check things off, add their own, and swipe any row left to delete it
+   (inbox-style — seeded and added rows alike). All state is local (useState)
    this phase — no network. Generic items only, no stores or brands (rule #2). */
 
 interface GroceryItem {
@@ -69,6 +72,22 @@ export default function GroceryScreen() {
   const [sections, setSections] = useState<GrocerySection[]>(SEED_SECTIONS);
   const [additions, setAdditions] = useState<GroceryItem[]>([]);
   const [draft, setDraft] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Second scroll pass once the keyboard is actually up — the onFocus timer
+  // alone can fire before iOS finishes the keyboard animation.
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
+  const scrollDraftIntoView = () => {
+    // The add-your-own input sits at the bottom of the list; scrolling to the
+    // end keeps it visible above the keyboard.
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250);
+  };
 
   const allItems = [...sections.flatMap((s) => s.items), ...additions];
   const inCart = allItems.filter((i) => i.checked).length;
@@ -90,7 +109,12 @@ export default function GroceryScreen() {
     setDraft('');
   };
 
-  const removeItem = (itemId: string) => setAdditions((prev) => prev.filter((i) => i.id !== itemId));
+  // Uniform delete: seeded rows come out of their section, added rows out of
+  // additions. Progress + section counts derive from state, so they follow.
+  const removeItem = (itemId: string) => {
+    setSections((prev) => prev.map((s) => ({ ...s, items: s.items.filter((i) => i.id !== itemId) })));
+    setAdditions((prev) => prev.filter((i) => i.id !== itemId));
+  };
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -129,7 +153,11 @@ export default function GroceryScreen() {
           </T>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 28 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={{ paddingBottom: 110 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Seeded sections */}
           {sections.map((section) => (
             <React.Fragment key={section.key}>
@@ -146,8 +174,14 @@ export default function GroceryScreen() {
                     item={item}
                     last={idx === section.items.length - 1}
                     onToggle={() => toggleItem(item.id)}
+                    onDelete={() => removeItem(item.id)}
                   />
                 ))}
+                {section.items.length === 0 ? (
+                  <View style={styles.emptyRow}>
+                    <T variant="caption">All cleared — swipe mistakes away, add your own below.</T>
+                  </View>
+                ) : null}
               </Card>
             </React.Fragment>
           ))}
@@ -166,6 +200,7 @@ export default function GroceryScreen() {
                   <GroceryRow
                     key={item.id}
                     item={item}
+                    added
                     last={idx === additions.length - 1}
                     onToggle={() => toggleItem(item.id)}
                     onDelete={() => removeItem(item.id)}
@@ -181,6 +216,7 @@ export default function GroceryScreen() {
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
+                onFocus={scrollDraftIntoView}
                 onSubmitEditing={addItem}
                 returnKeyType="done"
                 placeholder="Add your own — juice boxes, marshmallows…"
@@ -211,22 +247,40 @@ export default function GroceryScreen() {
 function GroceryRow({
   item,
   last,
+  added,
   onToggle,
   onDelete,
 }: {
   item: GroceryItem;
   last: boolean;
+  added?: boolean;
   onToggle: () => void;
-  onDelete?: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <View style={[styles.itemRow, !last && styles.itemRowBorder]}>
+    // Inbox-style swipe-left to delete, on every row. The row carries the card
+    // background so it slides cleanly over the warn-red action inside the
+    // Card's overflow:hidden corners.
+    <Swipeable
+      overshootRight={false}
+      renderRightActions={() => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${item.label}`}
+          onPress={onDelete}
+          style={styles.swipeDelete}
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.white} />
+          <T style={styles.swipeDeleteText}>Delete</T>
+        </Pressable>
+      )}
+    >
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: item.checked }}
         accessibilityLabel={item.label}
         onPress={onToggle}
-        style={styles.itemToggle}
+        style={[styles.itemRow, !last && styles.itemRowBorder]}
       >
         <Ionicons
           name={item.checked ? 'checkmark-circle' : 'ellipse-outline'}
@@ -244,21 +298,10 @@ function GroceryRow({
             {item.qty ? <T style={styles.itemQty}>{`  ${item.qty}`}</T> : null}
           </T>
           {item.why ? <T style={styles.itemSub}>{item.why}</T> : null}
-          {onDelete ? <T style={styles.itemSub}>Added by you</T> : null}
+          {added ? <T style={styles.itemSub}>Added by you</T> : null}
         </View>
       </Pressable>
-      {onDelete ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${item.label}`}
-          onPress={onDelete}
-          hitSlop={12}
-          style={styles.deleteBtn}
-        >
-          <Ionicons name="close" size={16} color={colors.faint} />
-        </Pressable>
-      ) : null}
-    </View>
+    </Swipeable>
   );
 }
 
@@ -293,29 +336,25 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 6,
-  },
-  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
-  itemToggle: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     minHeight: MIN_TOUCH,
+    backgroundColor: colors.card,
   },
+  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
+  emptyRow: { padding: 14 },
   itemLabel: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.ink },
   itemQty: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.muted },
   itemSub: { fontFamily: fonts.body, fontSize: 12, lineHeight: 16, color: colors.muted, marginTop: 1 },
-  deleteBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  swipeDelete: {
+    width: 84,
+    backgroundColor: colors.warn,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.ground,
+    gap: 2,
   },
+  swipeDeleteText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.white },
   addRow: {
     flexDirection: 'row',
     alignItems: 'center',

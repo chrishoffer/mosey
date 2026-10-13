@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -8,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card, Screen, T } from '../../../src/components/ui';
@@ -18,6 +20,7 @@ import { packItems as seedItems, travelers, trip, type PackItem } from '../../..
    Per-person tabs (travelers + Shared), live progress, laundry toggle,
    learned-from-last-trip rows, carry-on warnings in the warn color, a
    "Don't forget" pack-last section, and a decorative voice-add mic button.
+   Every row (seeded or parent-added) deletes with an inbox-style left swipe.
    All state is local (useState) this phase. */
 
 /** PackItem plus a local flag for parent-added rows (mock-data shape untouched). */
@@ -43,6 +46,22 @@ export default function PackScreen() {
   const [items, setItems] = useState<LocalPackItem[]>(seedItems);
   const [laundry, setLaundry] = useState(trip.laundryAccess);
   const [draft, setDraft] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Second scroll pass once the keyboard is actually up — the onFocus timer
+  // alone can fire before iOS finishes the keyboard animation.
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
+
+  const scrollDraftIntoView = () => {
+    // The add-your-own input sits near the bottom; scrolling to the end keeps
+    // it visible above the keyboard.
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250);
+  };
 
   const togglePacked = (itemId: string) =>
     setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, packed: !i.packed } : i)));
@@ -56,7 +75,10 @@ export default function PackScreen() {
     setDraft('');
   };
 
-  const removeCustomItem = (itemId: string) => setItems((prev) => prev.filter((i) => i.id !== itemId));
+  // Works for seeded and custom rows alike — items live in local state, so the
+  // mock-data module itself is never mutated. Progress + section counts derive
+  // from this state and update with the deletion.
+  const removeItem = (itemId: string) => setItems((prev) => prev.filter((i) => i.id !== itemId));
 
   const inTab = (i: LocalPackItem) =>
     tab === 'all' ? true : tab === 'shared' ? i.travelerId === null : i.travelerId === tab;
@@ -73,62 +95,66 @@ export default function PackScreen() {
 
   return (
     <Screen>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Back to trip" onPress={goBack} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={20} color={colors.ink} />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <T variant="heading" style={{ fontFamily: fonts.display }}>
-              Packing for {travelers.length}
-            </T>
-            <T variant="caption">
-              {packedTotal} of {items.length} packed · leave Fri 8 am
-            </T>
+      {/* KAV wraps the header too (same structure as ask.tsx, which offsets
+          correctly under the 86px tab bar with offset 90); the mic FAB stays
+          outside so it doesn't move when the keyboard opens. */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Back to trip" onPress={goBack} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={20} color={colors.ink} />
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <T variant="heading" style={{ fontFamily: fonts.display }}>
+                Packing for {travelers.length}
+              </T>
+              <T variant="caption">
+                {packedTotal} of {items.length} packed · leave Fri 8 am
+              </T>
+            </View>
           </View>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginTop: 12 }}
-          contentContainerStyle={{ gap: 8 }}
-        >
-          {TABS.map((t) => {
-            const on = tab === t.key;
-            return (
-              <Pressable
-                key={t.key}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                onPress={() => setTab(t.key)}
-                hitSlop={{ top: 2, bottom: 2 }}
-                style={[styles.tabChip, on ? styles.tabChipOn : styles.tabChipOff]}
-              >
-                <T
-                  style={{
-                    fontFamily: on ? fonts.bodyBold : fonts.bodySemi,
-                    fontSize: 14,
-                    color: on ? colors.white : colors.ink,
-                  }}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginTop: 12 }}
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {TABS.map((t) => {
+              const on = tab === t.key;
+              return (
+                <Pressable
+                  key={t.key}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  onPress={() => setTab(t.key)}
+                  hitSlop={{ top: 2, bottom: 2 }}
+                  style={[styles.tabChip, on ? styles.tabChipOn : styles.tabChipOff]}
                 >
-                  {t.label}
-                </T>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                  <T
+                    style={{
+                      fontFamily: on ? fonts.bodyBold : fonts.bodySemi,
+                      fontSize: 14,
+                      color: on ? colors.white : colors.ink,
+                    }}
+                  >
+                    {t.label}
+                  </T>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-      <View style={{ flex: 1 }}>
-        {/* Keeps the add-your-own input above the keyboard; the mic FAB stays
-            outside so it doesn't move when the keyboard opens. */}
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={{ paddingBottom: 110 }}
+          keyboardShouldPersistTaps="handled"
         >
-        <ScrollView contentContainerStyle={{ paddingBottom: 110 }} keyboardShouldPersistTaps="handled">
           {/* Laundry access */}
           <Card style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}>
             <View style={styles.laundryRow}>
@@ -175,7 +201,7 @@ export default function PackScreen() {
                 showOwner={tab === 'all'}
                 last={false}
                 onToggle={() => togglePacked(item.id)}
-                onDelete={item.custom ? () => removeCustomItem(item.id) : undefined}
+                onDelete={() => removeItem(item.id)}
               />
             ))}
             {mainItems.length === 0 ? (
@@ -189,6 +215,7 @@ export default function PackScreen() {
                 <TextInput
                   value={draft}
                   onChangeText={setDraft}
+                  onFocus={scrollDraftIntoView}
                   onSubmitEditing={addCustomItem}
                   returnKeyType="done"
                   placeholder="Add your own — goggles, white-noise app…"
@@ -222,24 +249,24 @@ export default function PackScreen() {
                     showOwner={tab === 'all'}
                     last={idx === packLastItems.length - 1}
                     onToggle={() => togglePacked(item.id)}
+                    onDelete={() => removeItem(item.id)}
                   />
                 ))}
               </Card>
             </>
           ) : null}
         </ScrollView>
-        </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
 
-        {/* Voice add — decorative this phase (brief §7: expo-speech-recognition later) */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add items by voice"
-          onPress={() => {}}
-          style={({ pressed }) => [styles.micFab, pressed && { opacity: 0.9 }]}
-        >
-          <Ionicons name="mic" size={24} color={colors.white} />
-        </Pressable>
-      </View>
+      {/* Voice add — decorative this phase (brief §7: expo-speech-recognition later) */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Add items by voice"
+        onPress={() => {}}
+        style={({ pressed }) => [styles.micFab, pressed && { opacity: 0.9 }]}
+      >
+        <Ionicons name="mic" size={24} color={colors.white} />
+      </Pressable>
     </Screen>
   );
 }
@@ -255,54 +282,61 @@ function PackRow({
   showOwner: boolean;
   last: boolean;
   onToggle: () => void;
-  onDelete?: () => void;
+  onDelete: () => void;
 }) {
   const sub = [showOwner ? ownerLabel(item) : null, item.reason, item.custom ? 'Added by you' : null]
     .filter(Boolean)
     .join(' · ');
   return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: item.packed }}
-      onPress={onToggle}
-      style={[styles.itemRow, !last && styles.itemRowBorder]}
-    >
-      <Ionicons
-        name={item.packed ? 'checkmark-circle' : 'ellipse-outline'}
-        size={24}
-        color={item.packed ? colors.teal : colors.faint}
-      />
-      <View style={{ flex: 1 }}>
-        <T
-          style={[
-            styles.itemLabel,
-            item.packed && { color: colors.muted, textDecorationLine: 'line-through', fontFamily: fonts.body },
-          ]}
-        >
-          {item.label}
-        </T>
-        {sub ? <T style={styles.itemSub}>{sub}</T> : null}
-        {item.learned ? <T style={styles.itemLearned}>Learned from last trip — you used this</T> : null}
-        {item.carryOnWarning ? (
-          <View style={styles.warnRow}>
-            <Ionicons name="warning" size={13} color={colors.warn} />
-            <T style={styles.warnText}>{item.carryOnWarning}</T>
-          </View>
-        ) : null}
-        {item.packLast ? <T style={styles.packLastText}>Pack last · morning of</T> : null}
-      </View>
-      {onDelete ? (
+    // Inbox-style swipe-left to delete, on every row. The row carries the card
+    // background so it slides cleanly over the warn-red action inside the
+    // Card's overflow:hidden corners.
+    <Swipeable
+      overshootRight={false}
+      renderRightActions={() => (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Remove ${item.label}`}
+          accessibilityLabel={`Delete ${item.label}`}
           onPress={onDelete}
-          hitSlop={12}
-          style={styles.deleteBtn}
+          style={styles.swipeDelete}
         >
-          <Ionicons name="close" size={16} color={colors.faint} />
+          <Ionicons name="trash-outline" size={20} color={colors.white} />
+          <T style={styles.swipeDeleteText}>Delete</T>
         </Pressable>
-      ) : null}
-    </Pressable>
+      )}
+    >
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: item.packed }}
+        onPress={onToggle}
+        style={[styles.itemRow, !last && styles.itemRowBorder]}
+      >
+        <Ionicons
+          name={item.packed ? 'checkmark-circle' : 'ellipse-outline'}
+          size={24}
+          color={item.packed ? colors.teal : colors.faint}
+        />
+        <View style={{ flex: 1 }}>
+          <T
+            style={[
+              styles.itemLabel,
+              item.packed && { color: colors.muted, textDecorationLine: 'line-through', fontFamily: fonts.body },
+            ]}
+          >
+            {item.label}
+          </T>
+          {sub ? <T style={styles.itemSub}>{sub}</T> : null}
+          {item.learned ? <T style={styles.itemLearned}>Learned from last trip — you used this</T> : null}
+          {item.carryOnWarning ? (
+            <View style={styles.warnRow}>
+              <Ionicons name="warning" size={13} color={colors.warn} />
+              <T style={styles.warnText}>{item.carryOnWarning}</T>
+            </View>
+          ) : null}
+          {item.packLast ? <T style={styles.packLastText}>Pack last · morning of</T> : null}
+        </View>
+      </Pressable>
+    </Swipeable>
   );
 }
 
@@ -370,6 +404,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     minHeight: MIN_TOUCH,
+    backgroundColor: colors.card,
   },
   itemRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
   itemLabel: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.ink },
@@ -378,14 +413,14 @@ const styles = StyleSheet.create({
   warnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
   warnText: { fontFamily: fonts.bodySemi, fontSize: 12, lineHeight: 16, color: colors.warn, flex: 1 },
   packLastText: { fontFamily: fonts.bodySemi, fontSize: 12, lineHeight: 16, color: colors.coral, marginTop: 1 },
-  deleteBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  swipeDelete: {
+    width: 84,
+    backgroundColor: colors.warn,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.ground,
+    gap: 2,
   },
+  swipeDeleteText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.white },
   addRow: {
     flexDirection: 'row',
     alignItems: 'center',
