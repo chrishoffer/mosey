@@ -80,5 +80,8 @@ phone frame reference 390×844. Match the mockups — don't improvise new colors
 
 ## Expo version note
 
-Expo SDK 56 / React Native 0.85 / React 19. Read the exact versioned docs at
-https://docs.expo.dev/versions/v56.0.0/ before writing native-touching code.
+Expo SDK 57 / React Native 0.86 / React 19 (upgraded 2026-10-13: the App Store
+Expo Go only runs the latest SDK). Read the exact versioned docs at
+https://docs.expo.dev/versions/v57.0.0/ before writing native-touching code.
+Note: `npx expo install --fix` can't reach api.expo.dev from the cloud sandbox —
+align versions from `node_modules/expo/bundledNativeModules.json` instead.
