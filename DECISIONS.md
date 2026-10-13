@@ -4,6 +4,20 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-10-13 — App shell + freemium round (Chris's list after first device run).** (1) Home is a
+  **dashboard**, not a trip: trips list + countdown chips, plan-a-new-trip CTA, inspiration row —
+  per Chris ("the trip itself likely shouldn't be the home screen"). (2) Branded **load screen** +
+  **welcome/sign-up** with PREVIEW auth (local persisted session; Supabase auth replaces the
+  internals in phase 3 — labeled honestly in-UI). (3) **Multi-trip**: persisted trips store;
+  completing the plan flow creates a trip (content still renders the shared sample until phase 3).
+  (4) **Freemium exactly per Chris's tier table** in `src/config/plans.ts` — Free ($0: search,
+  agenda, Kid-fit stays, ONE trip, explore, map/directions, partner booking), Trip Pass ($9.99/trip),
+  Family ($49.99/yr or $6.99/mo: unlimited trips, in-trip agent, confirmation reading, learning
+  packing, shared editing, offline). Paywall modal with PREVIEW billing (selection sets local
+  entitlement; RevenueCat later). Gates live: free trip limit (dashboard + deep flow path), agent
+  lock on Ask with an upsell card. (5) Custom packing adds + per-trip grocery list (seeded staples,
+  add/check). SDK note: upgraded to Expo SDK 57 earlier today (new phone's Expo Go requires latest).
+
 - **2026-10-13 — V2 pivot (Chris's handoff brief).** Chris delivered `MOSEY_BUILD_BRIEF.md` + 10
   mockups (`design/v2-mockups/`): Mosey becomes a full family-travel agent — plan flow
   (search → agenda → Kid-fit-ranked stays), drag-drop day planner with protected naps, trip map,
