@@ -17,6 +17,20 @@ sources or scope the v1 brief explicitly excludes (§12).
 - **Trip sharing / collaboration** between co-parents.
 - **Web companion app.**
 
+## V1 carry-overs promoted into the v2 roadmap (Chris, 2026-10-13)
+
+Build these into v2 after the brief's phase 3 (data) lands — they shipped and were
+validated in v1 (git history pre-2026-10-13):
+
+- **Co-parent whole-account sharing** (v1 migration 0004 pattern: account_members +
+  can_access() RLS; invite by email, claim on sign-in). Fold into the new
+  families/family_id model — a co-parent is naturally a second adult in `families`.
+- **Action-taking Ask Mosey** (server-validated actions: add reminder / packing /
+  plan item / to-do / logistics). Maps cleanly onto v2's agent tool-use loop (§6).
+- **Nurture drip prompts** (scheduled, self-cancelling questions between booking
+  and departure) + contextual "sharpen" questions before each generation.
+- **Readiness ring / leaving-home checklist** concepts from v1's Prep tab.
+
 ## Promoted OUT of this file by the human
 
 - **Whole-account trip sharing (2026-06-29).** Chris chose whole-account + full-edit ("1b, 2a")

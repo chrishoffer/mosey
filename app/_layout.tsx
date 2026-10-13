@@ -1,88 +1,40 @@
-import 'react-native-url-polyfill/auto';
-import React, { useEffect } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import * as Notifications from 'expo-notifications';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { useFonts } from 'expo-font';
-import { BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
-import {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-  HankenGrotesk_700Bold,
-} from '@expo-google-fonts/hanken-grotesk';
+import React from 'react';
 import { View } from 'react-native';
-import { queryClient } from '../src/lib/queryClient';
-import { AuthProvider, useAuth } from '../src/lib/auth';
-import { AccountProvider } from '../src/lib/account';
-import { palette } from '../src/theme/tokens';
-
-/** Redirects between the (auth) and (app) route groups based on session. */
-function AuthGate() {
-  const { session, loading, configured } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
-
-  // Tapping any Mosey notification (timeline nudge or nurture prompt) deep-links
-  // straight into its trip.
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as { tripId?: string } | undefined;
-      if (data?.tripId && typeof data.tripId === 'string') {
-        router.push(`/(app)/trip/${data.tripId}`);
-      }
-    });
-    return () => sub.remove();
-  }, [router]);
-
-  useEffect(() => {
-    if (loading) return;
-    const inAuthGroup = segments[0] === '(auth)';
-    // When Supabase isn't configured yet we still let the user reach the app shell,
-    // where each screen shows a friendly "connect Supabase" state.
-    const signedIn = !!session || !configured;
-    if (!signedIn && !inAuthGroup) {
-      router.replace('/(auth)/sign-in');
-    } else if (signedIn && inAuthGroup) {
-      router.replace('/(app)');
-    }
-  }, [session, loading, configured, segments, router]);
-
-  return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.paper } }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(app)" />
-    </Stack>
-  );
-}
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
+import {
+  Figtree_400Regular,
+  Figtree_500Medium,
+  Figtree_600SemiBold,
+  Figtree_700Bold,
+} from '@expo-google-fonts/figtree';
+import { colors } from '../src/theme/tokens';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    BricolageGrotesque_800ExtraBold,
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
+    Sora_600SemiBold,
+    Sora_700Bold,
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
   });
 
-  // We don't hard-block on fonts — if they fail we fall back to system fonts so the
-  // app never hangs on a blank splash. A one-frame paper background while loading.
   if (!fontsLoaded) {
-    return <View style={{ flex: 1, backgroundColor: palette.paper }} />;
+    return <View style={{ flex: 1, backgroundColor: colors.ground }} />;
   }
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AccountProvider>
-            <StatusBar style="dark" />
-            <AuthGate />
-          </AccountProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <StatusBar style="light" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.ground },
+        }}
+      />
     </SafeAreaProvider>
   );
 }

@@ -4,6 +4,20 @@ Execution-level choices made autonomously. Newest first. Each: what + why.
 
 ## Post-build adjustments
 
+- **2026-10-13 — V2 pivot (Chris's handoff brief).** Chris delivered `MOSEY_BUILD_BRIEF.md` + 10
+  mockups (`design/v2-mockups/`): Mosey becomes a full family-travel agent — plan flow
+  (search → agenda → Kid-fit-ranked stays), drag-drop day planner with protected naps, trip map,
+  explore, per-person packing, quick-action replans, affiliate link-out bookings. Chris chose:
+  **rebuild in this repo** (v1 preserved in git history before this date) and **carry over** v1's
+  sharing / action-taking / nurture later. Guardrail evolution: "never name a real place" becomes
+  "never INVENT real-world facts — places/prices/hours come only from real data sources (partner
+  APIs; mock data in phases 1–2)". New design system (ink/coral/teal/sun, Sora+Figtree) replaces
+  the warm cream v1. Phases 1–2 built first: all 10 screens as native components on mock data, no
+  API calls, no schema changes — the deployed v1 Supabase stays untouched until phase 3.
+  Foundation: `src/theme/tokens.ts`, `src/components/ui.tsx`, `src/mock/data.ts` (shapes mirror
+  brief §5), `src/store/planFlow.ts` (zustand), Expo Router tabs Trip·Days·Explore·Pack·Ask with
+  map/book as hidden routes. Screens built by three parallel agents from the mockups.
+
 - **2026-06-29 — Nurture drip + done-gate review fixes.** (1) **Drip prompts** (`src/lib/nurture.ts`):
   up to three scheduled local notifications per trip (~2 days after creation, 21 days out, 10 days
   out — only slots that land before departure) asking the sharpen questions; auto-cancelled the
