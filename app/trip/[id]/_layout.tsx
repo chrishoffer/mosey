@@ -54,6 +54,7 @@ export default function TripTabs() {
       />
       <Tabs.Screen name="map" options={{ href: null }} />
       <Tabs.Screen name="book" options={{ href: null }} />
+      <Tabs.Screen name="grocery" options={{ href: null }} />
     </Tabs>
   );
 }

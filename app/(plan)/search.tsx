@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen, T } from '../../src/components/ui';
 import { colors, fonts, MIN_TOUCH, radius, spacing } from '../../src/theme/tokens';
 import { usePlanFlow } from '../../src/store/planFlow';
+import { useSession } from '../../src/store/session';
 
 /* Plan step 1 — where / when / who. Mockup: design/v2-mockups/Main.dc.html.
    Mock-only display constants live here (never in src/mock or src/theme). */
@@ -32,6 +33,7 @@ function cycle<Item>(options: readonly Item[], current: Item): Item {
 
 export default function SearchScreen() {
   const router = useRouter();
+  const crewName = useSession((s) => s.name) || 'crew';
   const { destination, dates, kidAges, adults, pace, protectNap, bedtime, maxDriveMin, set } =
     usePlanFlow();
   const [tripType, setTripType] = useState<string | null>(null);
@@ -73,14 +75,19 @@ export default function SearchScreen() {
           <T style={styles.wordmark}>
             mosey<T style={[styles.wordmark, { color: colors.coral }]}>.</T>
           </T>
-          <Pressable accessibilityRole="button" accessibilityLabel="Your family profile" style={styles.avatar}>
-            <T style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.white }}>H</T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to your trips"
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+            style={styles.avatar}
+          >
+            <Ionicons name="close" size={20} color={colors.white} />
           </Pressable>
         </View>
 
         {/* Headline */}
         <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 18 }}>
-          <T style={styles.h1}>Where to next,{'\n'}Hoffer crew?</T>
+          <T style={styles.h1}>Where to next,{'\n'}{crewName}?</T>
           <T variant="body" color={colors.muted} style={{ marginTop: 8 }}>
             Tell me the basics. I'll handle stays, days and the meltdowns.
           </T>

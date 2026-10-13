@@ -153,6 +153,21 @@ export default function TripHomeScreen() {
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.faint} />
         </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push(`/trip/${tripId}/grocery`)}
+          style={styles.mapLink}
+        >
+          <View style={[styles.tileIcon, { backgroundColor: colors.sunSoft }]}>
+            <Ionicons name="cart-outline" size={22} color="#8A5A00" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <T style={{ fontFamily: fonts.bodyBold, fontSize: 15 }}>Grocery run</T>
+            <T variant="caption">The first-day shop, ready before you arrive</T>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.faint} />
+        </Pressable>
       </ScrollView>
     </Screen>
   );

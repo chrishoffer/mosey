@@ -6,6 +6,9 @@ import { Button, Screen, T } from '../../src/components/ui';
 import { colors, fonts, MIN_TOUCH, radius } from '../../src/theme/tokens';
 import { stays, type Stay } from '../../src/mock/data';
 import { usePlanFlow } from '../../src/store/planFlow';
+import { useTrips } from '../../src/store/trips';
+import { useEntitlements } from '../../src/store/entitlements';
+import { canCreateAnotherTrip } from '../../src/config/plans';
 
 /* Plan step 3 — stays ranked by Kid-fit, each with a "why Mosey picked it" line.
    Mockup: design/v2-mockups/Results.dc.html. */
@@ -35,6 +38,39 @@ export default function StaysScreen() {
   const whoLine = `${dateShort} · ${adults} adults, ${kidAges.length} kids`;
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(plan)/search'));
+
+  const { trips, addTrip } = useTrips();
+  const plan = useEntitlements((s) => s.plan);
+  const { pace, maxDriveMin, agenda } = usePlanFlow();
+
+  /** Create the trip from the flow's answers and land on its home. Free plan is
+   *  limited to one trip — the dashboard gate covers the entry, this covers the
+   *  deep path. (Phases 1–2: trip content still renders the shared sample.) */
+  function continueToTrip() {
+    const already = trips.find((t) => t.destination === (destination || 'Gatlinburg'));
+    if (already) {
+      router.push(`/trip/${already.id}`);
+      return;
+    }
+    if (!canCreateAnotherTrip(plan, trips.length)) {
+      router.push('/paywall');
+      return;
+    }
+    const dest = (destination || 'Gatlinburg').split(',')[0].trim();
+    const id = addTrip({
+      title: `${dest} trip`,
+      destination: dest,
+      startDate: '',
+      endDate: '',
+      daysUntil: -1, // "Planning" until real dates land in phase 3
+      driveLabel: dates || 'dates coming',
+      agenda,
+      laundryAccess: true,
+      pace,
+      maxDriveMinutes: maxDriveMin,
+    });
+    router.push(`/trip/${id}`);
+  }
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -110,7 +146,7 @@ export default function StaysScreen() {
           label="Continue to your trip"
           kind="primary"
           disabled={!selectedId}
-          onPress={() => router.push('/trip/1')}
+          onPress={continueToTrip}
           style={{ height: 54, borderRadius: 16 }}
           textStyle={{ fontSize: 16 }}
         />

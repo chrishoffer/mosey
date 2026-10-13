@@ -13,6 +13,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen, T } from '../../../src/components/ui';
 import { colors, fonts, MIN_TOUCH, radius, spacing } from '../../../src/theme/tokens';
 import { agentQuickActions } from '../../../src/mock/data';
+import { useEntitlements } from '../../../src/store/entitlements';
+import { canUseAgent } from '../../../src/config/plans';
 
 /* Ask Mosey — matches design/v2-mockups/Agent.dc.html.
    All replies are CANNED local constants (no AI, no network). Replan proposals
@@ -116,6 +118,8 @@ const INITIAL_MESSAGES: Msg[] = [
 export default function AskScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const plan = useEntitlements((s) => s.plan);
+  const agentUnlocked = canUseAgent(plan);
   const [messages, setMessages] = useState<Msg[]>(INITIAL_MESSAGES);
   const [applied, setApplied] = useState<string[]>([]); // proposal message ids the parent accepted
   const [draft, setDraft] = useState('');
@@ -179,19 +183,44 @@ export default function AskScreen() {
           </View>
         </View>
 
-        {/* Quick actions */}
-        <View style={styles.quickGrid}>
-          {agentQuickActions.map((a) => (
-            <Pressable
-              key={a}
-              accessibilityRole="button"
-              onPress={() => onQuickAction(a)}
-              style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.85 }]}
-            >
-              <T style={styles.quickLabel}>{QUICK_ACTION_LABELS[a]}</T>
-            </Pressable>
-          ))}
-        </View>
+        {/* Quick actions — the in-trip agent is a Trip Pass / Family feature */}
+        {agentUnlocked ? (
+          <View style={styles.quickGrid}>
+            {agentQuickActions.map((a) => (
+              <Pressable
+                key={a}
+                accessibilityRole="button"
+                onPress={() => onQuickAction(a)}
+                style={({ pressed }) => [styles.quickBtn, pressed && { opacity: 0.85 }]}
+              >
+                <T style={styles.quickLabel}>{QUICK_ACTION_LABELS[a]}</T>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => router.push('/paywall')}
+            accessibilityRole="button"
+            accessibilityLabel="Unlock the in-trip agent"
+            style={styles.agentLock}
+          >
+            <View style={styles.agentLockIcon}>
+              <Ionicons name="lock-closed" size={16} color={colors.teal} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T variant="bodySemi">Meltdown · Raining · Hungry · Late</T>
+              <T variant="caption">
+                The in-trip agent rescues the day in one tap — comes with Trip Pass or the Family
+                plan.
+              </T>
+            </View>
+            <View style={styles.agentLockCta}>
+              <T variant="caption" color={colors.white} style={{ fontSize: 12 }}>
+                Unlock
+              </T>
+            </View>
+          </Pressable>
+        )}
 
         {/* Chat thread */}
         <ScrollView
@@ -320,6 +349,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerSub: { fontFamily: fonts.bodySemi, fontSize: 13, lineHeight: 17, color: colors.teal },
+  agentLock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    backgroundColor: colors.card,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.line,
+    minHeight: 44,
+  },
+  agentLockIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.tealSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  agentLockCta: {
+    backgroundColor: colors.coral,
+    borderRadius: radius.chip,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   quickGrid: {
     paddingHorizontal: spacing.lg,
     paddingTop: 14,
