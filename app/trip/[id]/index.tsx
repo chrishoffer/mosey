@@ -35,7 +35,7 @@ export default function TripHomeScreen() {
     setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
 
   return (
-    <Screen>
+    <Screen edges={[]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
         <InkHeader>
           <View style={styles.headerRow}>

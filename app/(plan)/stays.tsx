@@ -13,7 +13,7 @@ import { usePlanFlow } from '../../src/store/planFlow';
 const TEAL_DEEP = '#085F56'; // kid-fit badge text, from the mockup
 
 // Photo placeholder colors from the mockup (stand-ins until partner photos land).
-const PHOTO_COLORS: Record<string, string> = { s1: '#2E5C7A', s2: '#6B8A5E', s3: '#8A6E5E' };
+const PHOTO_COLORS: Record<string, string> = { s1: '#2E5C7A', s2: '#6B8A5E', s3: '#8A6A4E' };
 
 const FILTERS = ['Kids sleep separately', 'Indoor pool', 'Free breakfast', 'Walkable'];
 const DEFAULT_FILTERS = ['Kids sleep separately', 'Indoor pool'];
@@ -172,7 +172,7 @@ function StayCard({
           </T>
         </View>
         <View style={styles.whyBox}>
-          <T style={{ fontFamily: fonts.bodySemi, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+          <T variant="section">
             Why Mosey picked it
           </T>
           <T style={{ fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.ink, marginTop: 3 }}>

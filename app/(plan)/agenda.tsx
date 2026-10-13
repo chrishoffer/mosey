@@ -87,7 +87,7 @@ export default function AgendaScreen() {
         <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 14 }}>
           {SECTIONS.map((section) => (
             <View key={section.title}>
-              <T variant="section" style={{ fontSize: 12, marginBottom: 8 }}>
+              <T variant="section" style={{ marginBottom: 8 }}>
                 {section.title}
               </T>
               <View style={styles.tileGrid}>

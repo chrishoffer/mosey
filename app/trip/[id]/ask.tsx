@@ -172,7 +172,9 @@ export default function AskScreen() {
             <Ionicons name="chevron-back" size={20} color={colors.ink} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <T variant="heading">Mosey</T>
+            <T variant="heading" style={{ fontFamily: fonts.display }}>
+              Mosey
+            </T>
             <T style={styles.headerSub}>Fri, Day 2 · you're at the aquarium</T>
           </View>
         </View>

@@ -79,7 +79,9 @@ export default function BookScreen() {
           <Ionicons name="chevron-back" size={20} color={colors.ink} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <T variant="heading">Lock it in</T>
+          <T variant="heading" style={{ fontFamily: fonts.display }}>
+            Lock it in
+          </T>
           <T variant="caption">{trip.title}</T>
         </View>
       </View>
@@ -195,6 +197,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 2,
     borderColor: colors.ink,
+    overflow: 'visible', // Card clips children; visible lets the iOS shadow render
     shadowColor: colors.ink,
     shadowOpacity: 0.08,
     shadowRadius: 16,

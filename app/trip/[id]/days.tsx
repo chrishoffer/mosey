@@ -101,7 +101,7 @@ export default function DaysScreen() {
               onPress={() => selectDay(idx)}
               style={[styles.dayTab, active && { backgroundColor: colors.ink }]}
             >
-              <T style={{ fontFamily: fonts.bodySemi, fontSize: 12, color: active ? 'rgba(255,255,255,0.8)' : colors.muted }}>
+              <T style={{ fontFamily: fonts.bodySemi, fontSize: 12, color: active ? colors.white : colors.muted }}>
                 {dow}
               </T>
               <T style={{ fontFamily: fonts.bodyBold, fontSize: 17, color: active ? colors.white : colors.ink }}>
@@ -139,8 +139,8 @@ export default function DaysScreen() {
                   {isNap ? (
                     <View style={styles.napBlock}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Ionicons name="lock-closed" size={15} color={colors.teal} />
-                        <T style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.teal }}>{item.title}</T>
+                        <Ionicons name="lock-closed" size={15} color={colors.muted} />
+                        <T style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.muted }}>{item.title}</T>
                       </View>
                       <T variant="caption" style={{ marginTop: 3 }}>
                         {fmtDuration(item.durationMin)} · {item.note}
@@ -229,7 +229,8 @@ export default function DaysScreen() {
           label="Looks good · save the trip"
           kind="ink"
           onPress={() => router.push(`/trip/${tripId}`)}
-          style={{ marginHorizontal: spacing.lg, marginTop: spacing.xl }}
+          style={{ marginHorizontal: spacing.lg, marginTop: spacing.xl, minHeight: 52 }}
+          textStyle={{ fontSize: 16 }}
         />
       </ScrollView>
     </Screen>
@@ -295,10 +296,11 @@ const styles = StyleSheet.create({
   napBlock: {
     flex: 1,
     borderRadius: 12,
-    padding: 14,
-    backgroundColor: colors.tealSoft,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    backgroundColor: colors.line, // protected block: neutral fill + dashed faint border (Planner.dc.html)
     borderWidth: 1.5,
-    borderColor: colors.teal,
+    borderColor: colors.faint,
     borderStyle: 'dashed',
   },
   grip: {
@@ -321,7 +323,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: MIN_TOUCH,
     borderRadius: 10,
-    backgroundColor: '#EEF1F6',
+    backgroundColor: colors.ground,
     alignItems: 'center',
     justifyContent: 'center',
   },

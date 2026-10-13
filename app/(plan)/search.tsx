@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Screen, T, Wordmark } from '../../src/components/ui';
+import { Screen, T } from '../../src/components/ui';
 import { colors, fonts, MIN_TOUCH, radius, spacing } from '../../src/theme/tokens';
 import { usePlanFlow } from '../../src/store/planFlow';
 
@@ -68,7 +68,11 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         {/* Wordmark + profile */}
         <View style={styles.topRow}>
-          <Wordmark size={24} onDark={false} />
+          {/* Light-surface wordmark: the shared Wordmark's sun dot would sit on the
+              light ground (sun never on white), so the dot is coral here, as in Main.dc.html. */}
+          <T style={styles.wordmark}>
+            mosey<T style={[styles.wordmark, { color: colors.coral }]}>.</T>
+          </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Your family profile" style={styles.avatar}>
             <T style={{ fontFamily: fonts.bodyBold, fontSize: 15, color: colors.white }}>H</T>
           </Pressable>
@@ -284,7 +288,7 @@ function SettingTile({
           fontFamily: fonts.bodyBold,
           fontSize: 15,
           marginTop: 2,
-          color: dimmed ? colors.faint : colors.ink,
+          color: dimmed ? colors.muted : colors.ink, // faint on white fails contrast
         }}
       >
         {value}
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  wordmark: { fontFamily: fonts.display, fontSize: 24, lineHeight: 28, letterSpacing: -0.5, color: colors.ink },
   h1: { fontFamily: fonts.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.6, color: colors.ink },
   searchCard: {
     marginHorizontal: 16,

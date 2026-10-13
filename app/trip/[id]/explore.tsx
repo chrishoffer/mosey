@@ -66,6 +66,7 @@ export default function ExploreScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 onPress={() => toggleChip(c)}
+                hitSlop={6}
                 style={[styles.filterChip, on ? styles.filterChipOn : styles.filterChipOff]}
               >
                 <T style={[styles.filterChipLabel, { color: on ? colors.white : colors.ink }]}>{c}</T>
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radius.chip,
-    minHeight: 33,
+    minHeight: 36,
     justifyContent: 'center',
   },
   filterChipOn: { backgroundColor: colors.ink },

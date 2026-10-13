@@ -3,6 +3,17 @@
 Proposals surfaced along the way. The human promotes these into scope; they are NOT
 built until promoted (the Skeptic enforces this). Newest first.
 
+## V2 design-pass leftovers (2026-10-13 — small polish, needs logic/structure)
+
+- Pin the Days "Looks good · save the trip" CTA to the bottom (mockup pins it).
+- TipStrip: swap the 💡 emoji for a #8A5A00 sparkle icon + #4D3600 text per mockups.
+- Trip home: actionable to-do details in teal (needs a per-todo flag in mock data).
+- iOS shadows on clipped cards (stays/explore/ask proposal): outer shadow wrapper
+  around an inner overflow-hidden view.
+- Bottom safe-area padding check on map/ask/book/pack on a home-indicator device.
+- Replace the off-mockup purple photo placeholder (#7A5E8A) in ask/explore with a
+  mockup placeholder color.
+
 ## From the Customer agent's review (2026-06-29)
 
 - **Cruise-native "Getting there" framing.** For trip_type=cruise, the transit kit and day

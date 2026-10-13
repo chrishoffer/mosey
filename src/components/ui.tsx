@@ -9,7 +9,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { colors, fonts, MIN_TOUCH, radius, spacing } from '../theme/tokens';
 
 /* Shared UI kit for Mosey v2. Match the mockups in design/v2-mockups/:
@@ -84,9 +84,12 @@ export function Screen({
   );
 }
 
-/** Dark ink hero header with the 28px rounded bottom, as on Trip home / search. */
+/** Dark ink hero header with the 28px rounded bottom, as on Trip home / search.
+ *  Absorbs the top safe-area inset itself so the notch area stays ink — pair it
+ *  with a Screen that passes edges={[]}. */
 export function InkHeader({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.inkHeader, style]}>{children}</View>;
+  const insets = useSafeAreaInsets();
+  return <View style={[styles.inkHeader, { paddingTop: insets.top + spacing.xl + 2 }, style]}>{children}</View>;
 }
 
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {

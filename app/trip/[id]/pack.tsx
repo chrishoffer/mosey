@@ -57,7 +57,9 @@ export default function PackScreen() {
             <Ionicons name="chevron-back" size={20} color={colors.ink} />
           </Pressable>
           <View style={{ flex: 1 }}>
-            <T variant="heading">Packing for {travelers.length}</T>
+            <T variant="heading" style={{ fontFamily: fonts.display }}>
+              Packing for {travelers.length}
+            </T>
             <T variant="caption">
               {packedTotal} of {items.length} packed · leave Fri 8 am
             </T>
@@ -77,6 +79,7 @@ export default function PackScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 onPress={() => setTab(t.key)}
+                hitSlop={{ top: 2, bottom: 2 }}
                 style={[styles.tabChip, on ? styles.tabChipOn : styles.tabChipOff]}
               >
                 <T

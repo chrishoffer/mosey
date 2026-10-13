@@ -105,10 +105,10 @@ export default function MapScreen() {
             strokeLinecap="round"
           />
           {/* roads */}
-          <Path d="M40 -10 L 120 440" stroke="#FFFFFF" strokeWidth={10} />
-          <Path d="M-10 150 L 400 120" stroke="#FFFFFF" strokeWidth={10} />
-          <Path d="M260 -10 C 240 120, 300 220, 260 440" fill="none" stroke="#FFFFFF" strokeWidth={8} />
-          <Path d="M0 400 L 400 360" stroke="#FFFFFF" strokeWidth={6} />
+          <Path d="M40 -10 L 120 440" stroke={colors.white} strokeWidth={10} />
+          <Path d="M-10 150 L 400 120" stroke={colors.white} strokeWidth={10} />
+          <Path d="M260 -10 C 240 120, 300 220, 260 440" fill="none" stroke={colors.white} strokeWidth={8} />
+          <Path d="M0 400 L 400 360" stroke={colors.white} strokeWidth={6} />
           {/* parks */}
           <Ellipse cx={330} cy={60} rx={70} ry={45} fill="#CFDDCB" />
           <Ellipse cx={40} cy={380} rx={60} ry={40} fill="#CFDDCB" />
