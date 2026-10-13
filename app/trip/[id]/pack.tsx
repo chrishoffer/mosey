@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card, Screen, T } from '../../../src/components/ui';
@@ -12,6 +20,9 @@ import { packItems as seedItems, travelers, trip, type PackItem } from '../../..
    "Don't forget" pack-last section, and a decorative voice-add mic button.
    All state is local (useState) this phase. */
 
+/** PackItem plus a local flag for parent-added rows (mock-data shape untouched). */
+type LocalPackItem = PackItem & { custom?: boolean };
+
 const kids = travelers.filter((t) => !t.isAdult);
 
 const TABS: { key: string; label: string }[] = [
@@ -20,7 +31,7 @@ const TABS: { key: string; label: string }[] = [
   { key: 'shared', label: 'Shared' },
 ];
 
-function ownerLabel(item: PackItem): string {
+function ownerLabel(item: LocalPackItem): string {
   if (item.travelerId === null) return 'Shared';
   return travelers.find((t) => t.id === item.travelerId)?.label ?? '';
 }
@@ -29,13 +40,25 @@ export default function PackScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tab, setTab] = useState('all');
-  const [items, setItems] = useState<PackItem[]>(seedItems);
+  const [items, setItems] = useState<LocalPackItem[]>(seedItems);
   const [laundry, setLaundry] = useState(trip.laundryAccess);
+  const [draft, setDraft] = useState('');
 
   const togglePacked = (itemId: string) =>
     setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, packed: !i.packed } : i)));
 
-  const inTab = (i: PackItem) =>
+  const addCustomItem = () => {
+    const label = draft.trim();
+    if (!label) return;
+    // New items land on the active tab; "Whole crew" / "Shared" both mean shared.
+    const travelerId = tab === 'all' || tab === 'shared' ? null : tab;
+    setItems((prev) => [...prev, { id: `custom-${Date.now()}`, travelerId, label, packed: false, custom: true }]);
+    setDraft('');
+  };
+
+  const removeCustomItem = (itemId: string) => setItems((prev) => prev.filter((i) => i.id !== itemId));
+
+  const inTab = (i: LocalPackItem) =>
     tab === 'all' ? true : tab === 'shared' ? i.travelerId === null : i.travelerId === tab;
 
   const visible = items.filter(inTab);
@@ -98,7 +121,14 @@ export default function PackScreen() {
       </View>
 
       <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
+        {/* Keeps the add-your-own input above the keyboard; the mic FAB stays
+            outside so it doesn't move when the keyboard opens. */}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
+        <ScrollView contentContainerStyle={{ paddingBottom: 110 }} keyboardShouldPersistTaps="handled">
           {/* Laundry access */}
           <Card style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}>
             <View style={styles.laundryRow}>
@@ -138,20 +168,44 @@ export default function PackScreen() {
             </T>
           </View>
           <Card style={{ marginHorizontal: spacing.lg }}>
-            {mainItems.map((item, idx) => (
+            {mainItems.map((item) => (
               <PackRow
                 key={item.id}
                 item={item}
                 showOwner={tab === 'all'}
-                last={idx === mainItems.length - 1}
+                last={false}
                 onToggle={() => togglePacked(item.id)}
+                onDelete={item.custom ? () => removeCustomItem(item.id) : undefined}
               />
             ))}
             {mainItems.length === 0 ? (
-              <View style={{ padding: 14 }}>
-                <T variant="caption">Nothing here yet — add items with the mic.</T>
+              <View style={{ padding: 14, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+                <T variant="caption">Nothing here yet — add your own below, or use the mic.</T>
               </View>
             ) : null}
+            {/* Add your own — goes to the active tab */}
+            <View style={styles.addRow}>
+              <View style={styles.addInputWrap}>
+                <TextInput
+                  value={draft}
+                  onChangeText={setDraft}
+                  onSubmitEditing={addCustomItem}
+                  returnKeyType="done"
+                  placeholder="Add your own — goggles, white-noise app…"
+                  placeholderTextColor={colors.faint}
+                  accessibilityLabel="Add a packing item"
+                  style={styles.addInput}
+                />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add item to the packing list"
+                onPress={addCustomItem}
+                style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.9 }]}
+              >
+                <Ionicons name="add" size={24} color={colors.white} />
+              </Pressable>
+            </View>
           </Card>
 
           {/* Pack-last section */}
@@ -174,6 +228,7 @@ export default function PackScreen() {
             </>
           ) : null}
         </ScrollView>
+        </KeyboardAvoidingView>
 
         {/* Voice add — decorative this phase (brief §7: expo-speech-recognition later) */}
         <Pressable
@@ -194,13 +249,17 @@ function PackRow({
   showOwner,
   last,
   onToggle,
+  onDelete,
 }: {
-  item: PackItem;
+  item: LocalPackItem;
   showOwner: boolean;
   last: boolean;
   onToggle: () => void;
+  onDelete?: () => void;
 }) {
-  const sub = [showOwner ? ownerLabel(item) : null, item.reason].filter(Boolean).join(' · ');
+  const sub = [showOwner ? ownerLabel(item) : null, item.reason, item.custom ? 'Added by you' : null]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -232,6 +291,17 @@ function PackRow({
         ) : null}
         {item.packLast ? <T style={styles.packLastText}>Pack last · morning of</T> : null}
       </View>
+      {onDelete ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${item.label}`}
+          onPress={onDelete}
+          hitSlop={12}
+          style={styles.deleteBtn}
+        >
+          <Ionicons name="close" size={16} color={colors.faint} />
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -308,6 +378,38 @@ const styles = StyleSheet.create({
   warnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
   warnText: { fontFamily: fonts.bodySemi, fontSize: 12, lineHeight: 16, color: colors.warn, flex: 1 },
   packLastText: { fontFamily: fonts.bodySemi, fontSize: 12, lineHeight: 16, color: colors.coral, marginTop: 1 },
+  deleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.ground,
+  },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  addInputWrap: {
+    flex: 1,
+    height: MIN_TOUCH,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 22,
+    backgroundColor: colors.ground,
+    justifyContent: 'center',
+  },
+  addInput: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, paddingVertical: 0 },
+  addBtn: {
+    width: MIN_TOUCH,
+    height: MIN_TOUCH,
+    borderRadius: 22,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   micFab: {
     position: 'absolute',
     right: 20,
